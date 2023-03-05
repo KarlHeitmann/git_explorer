@@ -1,4 +1,35 @@
-use git2::{Repository, BranchType};
+use git2::{Repository, BranchType, DiffHunk};
+
+/*
+use crate::{
+	error::{Error, Result},
+	hash,
+	sync::repository::repo,
+};
+
+use crate::{
+	hash,
+};
+*/
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Hash)]
+struct HunkHeader {
+	pub old_start: u32,
+	pub old_lines: u32,
+	pub new_start: u32,
+	pub new_lines: u32,
+}
+
+impl From<DiffHunk<'_>> for HunkHeader {
+	fn from(h: DiffHunk) -> Self {
+		Self {
+			old_start: h.old_start(),
+			old_lines: h.old_lines(),
+			new_start: h.new_start(),
+			new_lines: h.new_lines(),
+		}
+	}
+}
 
 fn main() {
     println!("Hello, world!");
@@ -33,9 +64,11 @@ fn main() {
     let message = repo.message();
     println!("{:?}", message);
     */
+    // jfkhsjkfhsdjkfs djsd hfjkhfsjkd fhjdskfhsd
 
     let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
  
+    /*
     for delta in my_first_diff.deltas() {
         println!("{:?}", delta.status());
         let old_file = delta.old_file();
@@ -44,4 +77,34 @@ fn main() {
         println!("{:?}", old_file);
         println!("{:?}", new_file);
     }
+    */
+
+    let foreach_result = my_first_diff.foreach(
+		&mut |_, _| true,
+		None,
+		Some(&mut |_, hunk| {
+			// let header = HunkHeader::from(hunk);
+            /*
+            println!("{:?}", hunk);
+            println!("{:?}", hunk.header());
+            */
+
+            // let a: str = hunk.header();
+            let a = String::from_utf8(hunk.header().to_vec()).unwrap();
+            println!("{:?}", a);
+            /*
+			if hash(&header) == hunk_hash {
+				result = Some(hunk_count);
+			}
+			hunk_count += 1;
+            */
+			true
+		}),
+		None,
+	);
+
+    println!("{:?}", foreach_result);
+
+
+
 }
