@@ -1,4 +1,6 @@
-use git2::{Repository, BranchType, DiffHunk};
+use git2::{Repository, BranchType};
+
+mod graph;
 
 fn main() {
     println!("Hello, world!");
@@ -48,5 +50,6 @@ fn main() {
     println!("{:?}", foreach_result);
 
 
+    graph::paint_commit_track(head.peel_to_commit().unwrap());
 
 }
