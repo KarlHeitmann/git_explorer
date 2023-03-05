@@ -50,6 +50,6 @@ fn main() {
     println!("{:?}", foreach_result);
 
 
-    graph::paint_commit_track(head.peel_to_commit().unwrap());
+    graph::paint_commit_track(head.peel_to_commit().unwrap(), 0);
 
 }
