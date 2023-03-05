@@ -1,5 +1,4 @@
-use git2::Repository;
-use git2::BranchType;
+use git2::{Repository, BranchType, DiffHunk};
 
 fn main() {
     println!("Hello, world!");
@@ -11,7 +10,6 @@ fn main() {
         Ok(repo) => repo,
         Err(e) => panic!("failed to get head: {}", e),
     };
-    // debug!(logger, "head found"; "head" => head.name());
 
     println!("{:?}", head.name());
     println!("{:?}", head.shorthand());
@@ -22,5 +20,33 @@ fn main() {
         println!("{:?}", b.0.get().name());
         println!("{:?}", b.0.get().shorthand());
     }
-    // println!("{:?}", repo.branches());
+    let state = repo.state();
+    println!("{:?}", state);
+
+    let workdir = repo.workdir();
+    println!("{:?}", workdir);
+ 
+    let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
+
+    let foreach_result = my_first_diff.foreach(
+		&mut |_, _| true,
+		None,
+		Some(&mut |_, hunk| {
+            let a = String::from_utf8(hunk.header().to_vec()).unwrap();
+            println!("{:?}", a);
+			true
+		}),
+		Some(&mut |_, _hunk, line| {
+            let mut a = line.origin().to_string();
+            let b = String::from_utf8(line.content().to_vec()).unwrap();
+            a.push_str(&b);
+            println!("{:?}", a);
+			true
+		}),
+	);
+
+    println!("{:?}", foreach_result);
+
+
+
 }
