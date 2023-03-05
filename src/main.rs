@@ -23,4 +23,7 @@ fn main() {
         println!("{:?}", b.0.get().shorthand());
     }
     // println!("{:?}", repo.branches());
+    //
+    let state = repo.state();
+    println!("{:?}", state);
 }
