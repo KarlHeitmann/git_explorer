@@ -2,12 +2,7 @@ use git2::{Repository, BranchType};
 
 mod graph;
 
-fn main() {
-    println!("Hello, world!");
-    let repo = match Repository::open(".") {
-        Ok(repo) => repo,
-        Err(e) => panic!("failed to open: {}", e),
-    };
+fn test_info(repo: &Repository) {
     let head = match repo.head() {
         Ok(repo) => repo,
         Err(e) => panic!("failed to get head: {}", e),
@@ -48,8 +43,21 @@ fn main() {
 	);
 
     println!("{:?}", foreach_result);
+}
 
+fn main() {
+    println!("Hello, world!");
 
+    let repo = match Repository::open(".") {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to open: {}", e),
+    };
+    let head = match repo.head() {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to get head: {}", e),
+    };
+
+    test_info(&repo);
     graph::paint_commit_track(head.peel_to_commit().unwrap(), 0);
 
 }

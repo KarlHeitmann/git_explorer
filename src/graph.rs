@@ -7,7 +7,8 @@ pub fn paint_commit_track(commit: Commit, offset: u8) {
     }
 
     let mut i = 0;
-    for parent in commit.parents() {
+    let parents: Vec<Commit> = commit.parents().collect();
+    for parent in parents {
         paint_commit_track(parent, offset + i);
         i = i + 1;
     }
