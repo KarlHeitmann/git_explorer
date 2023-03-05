@@ -29,7 +29,19 @@ fn main() {
     let workdir = repo.workdir();
     println!("{:?}", workdir);
  
+    /*
     let message = repo.message();
     println!("{:?}", message);
+    */
+
+    let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
  
+    for delta in my_first_diff.deltas() {
+        println!("{:?}", delta.status());
+        let old_file = delta.old_file();
+        let new_file = delta.new_file();
+        println!("{:?}", delta);
+        println!("{:?}", old_file);
+        println!("{:?}", new_file);
+    }
 }
