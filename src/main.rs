@@ -2,6 +2,7 @@ use git2::{Repository, BranchType};
 
 mod graph;
 
+// #[!warn(dead_code)]
 fn test_info(repo: &Repository) {
     let head = match repo.head() {
         Ok(repo) => repo,
@@ -57,7 +58,8 @@ fn main() {
         Err(e) => panic!("failed to get head: {}", e),
     };
 
-    test_info(&repo);
-    graph::paint_commit_track(head.peel_to_commit().unwrap(), 0);
+    // test_info(&repo);
+    // graph::paint_commit_track(head.peel_to_commit().unwrap(), 0);
+    graph::paint_commit_track(head.peel_to_commit().unwrap());
 
 }
