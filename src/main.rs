@@ -83,24 +83,19 @@ fn main() {
 		&mut |_, _| true,
 		None,
 		Some(&mut |_, hunk| {
-			// let header = HunkHeader::from(hunk);
-            /*
-            println!("{:?}", hunk);
-            println!("{:?}", hunk.header());
-            */
-
-            // let a: str = hunk.header();
             let a = String::from_utf8(hunk.header().to_vec()).unwrap();
             println!("{:?}", a);
-            /*
-			if hash(&header) == hunk_hash {
-				result = Some(hunk_count);
-			}
-			hunk_count += 1;
-            */
 			true
 		}),
-		None,
+		Some(&mut |_, _hunk, line| {
+            let mut a = line.origin().to_string();
+            let b = String::from_utf8(line.content().to_vec()).unwrap();
+            a.push_str(&b);
+            // c.pus();
+            // let a = String::from_utf8(vec!(line.origin())).unwrap().push(String::from_utf8(line.content().to_vec()).unwrap());
+            println!("{:?}", a);
+			true
+		}),
 	);
 
     println!("{:?}", foreach_result);
