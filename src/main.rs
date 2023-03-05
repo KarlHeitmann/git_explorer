@@ -1,5 +1,4 @@
-use git2::Repository;
-use git2::BranchType;
+use git2::{Repository, BranchType};
 
 fn main() {
     println!("Hello, world!");
@@ -26,4 +25,11 @@ fn main() {
     //
     let state = repo.state();
     println!("{:?}", state);
+
+    let workdir = repo.workdir();
+    println!("{:?}", workdir);
+ 
+    let message = repo.message();
+    println!("{:?}", message);
+ 
 }
