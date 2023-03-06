@@ -2,14 +2,9 @@ use std::cmp::Ordering;
 
 use git2::{Commit, Oid, Time};
 
-fn paint_branch(mut commits: Vec<Commit>) {
-    // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| c.id().to_string()).collect();
-    // println!("{:?}", debug_data);
-    let l = commits.len();
-    let times: Vec<Time> = commits.clone().into_iter().map(|c| c.time()).collect();
+fn find_max_index(times: Vec<Time>) -> usize {
     let mut max = times[0];
     let mut max_index = 0;
-    let mut reduced = false;
 
     for (index, &x) in times.iter().enumerate() {
         if x > max {
@@ -18,6 +13,10 @@ fn paint_branch(mut commits: Vec<Commit>) {
         }
     }
 
+    max_index
+}
+
+fn paint(l: usize, max_index: usize, commit: &Commit) {
     // PAINT
     let mut branches_string = String::new();
     for i in 0..l {
@@ -27,11 +26,24 @@ fn paint_branch(mut commits: Vec<Commit>) {
             branches_string.push_str("● ");
         }
     }
-    let commit = commits[max_index].clone();
     unsafe {
         let id = commit.id().to_string();
         println!("{} ({}) {} ", branches_string, id.get_unchecked(0..7), commit.summary().unwrap());
     }
+}
+
+fn paint_branch(mut commits: Vec<Commit>) {
+    // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| c.id().to_string()).collect();
+    // println!("{:?}", debug_data);
+    let l = commits.len();
+    let mut reduced = false;
+
+    let mut max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
+
+    let commit = commits[max_index].clone();
+
+    // PAINT
+    paint(l, max_index, &commit);
 
     // REDUCE
     let cs = commits.clone();
