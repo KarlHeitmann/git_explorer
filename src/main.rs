@@ -1,3 +1,4 @@
+#![feature(iter_collect_into)]
 use git2::{Repository, BranchType};
 
 mod graph;
