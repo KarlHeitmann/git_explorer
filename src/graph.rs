@@ -3,10 +3,13 @@ use std::cmp::Ordering;
 use git2::{Commit, Oid, Time};
 
 fn paint_branch(mut commits: Vec<Commit>) {
+    // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| c.id().to_string()).collect();
+    // println!("{:?}", debug_data);
     let l = commits.len();
     let times: Vec<Time> = commits.clone().into_iter().map(|c| c.time()).collect();
     let mut max = times[0];
     let mut max_index = 0;
+    let mut reduced = false;
 
     for (index, &x) in times.iter().enumerate() {
         if x > max {
@@ -38,6 +41,7 @@ fn paint_branch(mut commits: Vec<Commit>) {
                 if c.id() == p.id() {
                     commits.remove(max_index);
                     if max_index >= i { max_index = max_index - 1; }
+                    reduced = true;
                     break 'outer;
                 }
             }
@@ -50,11 +54,17 @@ fn paint_branch(mut commits: Vec<Commit>) {
         }
         1 => {
             commits[max_index] = commit.parent(0).unwrap();
+            if reduced { println!("├─┘"); }
             paint_branch(commits);
         },
         l => {
             println!("├─┐");
-            commit.parents().collect_into(&mut commits);
+            let parents: Vec<Commit> = commit.parents().collect();
+            commits.remove(max_index);
+            commits.insert(max_index, parents[0].clone());
+            commits.insert(max_index + 1, parents[1].clone());
+
+            // parents.collect_into(&mut commits)
             paint_branch(commits);
         }
     }
