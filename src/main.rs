@@ -47,7 +47,6 @@ fn test_info(repo: &Repository) {
 }
 
 fn main() {
-    println!("Hello, world!");
 
     let repo = match Repository::open(".") {
         Ok(repo) => repo,
