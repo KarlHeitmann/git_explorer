@@ -4,7 +4,10 @@ fn paint_branch_aux(commit: Commit, oid: Oid, offset: u8) {
     if commit.id() != oid {
         println!("│ │");
         println!("│ ● {}", commit.summary().unwrap());
-        paint_branch_aux(commit.parent(0).unwrap(), oid, offset);
+        match commit.parent(0) {
+            Ok(parent) => paint_branch_aux(parent, oid, offset),
+            Err(e) => println!("ERROR: commit {} has error on getting parent: {}", commit.id(), e),
+        }
     } else {
         println!("├─┘");
     }
