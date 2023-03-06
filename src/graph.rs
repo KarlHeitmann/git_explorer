@@ -37,7 +37,6 @@ fn paint_branch(commit: Commit, oid: Option<Oid>, offset: u8) {
 
 pub fn paint_commit_track(commit: Commit) {
     match commit.summary() {
-        // Some(message) => println!("{} {}", " ".repeat(offset.into()), message.trim()),
         Some(message) => println!("● {}", message.trim()),
         None => {},
     }
@@ -55,19 +54,9 @@ pub fn paint_commit_track(commit: Commit) {
             let parent_2 = &parents[1];
             paint_branch(parent_1.clone(), None, 0);
             paint_branch(parent_2.clone(), Some(parent_1.id()), 0);
-            // println!("{} - {}", parent_1.summary().unwrap(), parent_2.summary().unwrap());
-            // println!("{} - {}", parent_1.id(), parent_2.id());
 
         }
         _ => {},
     }
-    /*
-    let mut i = 0;
-    let parents: Vec<Commit> = commit.parents().collect();
-    for parent in parents {
-        paint_commit_track(parent, offset + i);
-        i = i + 1;
-    }
-    */
 }
 
