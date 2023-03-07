@@ -39,6 +39,7 @@ fn paint(l: usize, max_index: usize, commit: &Commit) {
     println!("{} ({}) {} ", branches_string, id, commit.summary().unwrap());
 }
 
+#[derive(PartialEq)]
 enum Status {
     Same,
     Increase,
@@ -63,34 +64,80 @@ fn paint_branch(mut commits: Vec<Commit>) {
     
     let parents_max: Vec<Commit> = commit_max.parents().collect();
 
+    // SUBSTITUTE commit_max by all its parents inside the "commits" vector.
     match parents_max.len() {
         0 => {
             commits.remove(max_index);
-            // println!("├─┘");
+            println!("├─┘");
             status = Status::Decrease;
         },
         1 => {
             commits.remove(max_index);
             commits.insert(max_index, parents_max[0].clone());
         },
-        _ => {
+        2 => {
             commits.remove(max_index);
             status = Status::Increase;
-            // println!("├─┐");
+            println!("├─┐");
             commits.insert(max_index, parents_max[0].clone());
             commits.insert(max_index + 1, parents_max[1].clone());
-        }
+        },
+        _ => { panic!("AAHHH! There is a commit with more than 2 parents!!! I'm so scared... HINT: Use the case above and apply it to general") }
     }
 
     // commits.du
-    commits.dedup_by(|a,b| a.id() == b.id());
+    // commits.dedup_by(|a,b| a.id() == b.id());
+    let mut binding = commits.clone();
+    let (dedup, duplicates) = binding.partition_dedup_by(|a, b| a.id() == b.id()); // duplicates: each repeated element appears in the array
+
+    let mut reduces_string = String::new();
+    if duplicates.len() > 0 {
+        // println!("{:?}", duplicates);
+        // let binding = commits.clone();
+        // println!("alaracaaaaaaaaaaa");
+        for dup in duplicates {
+            // binding.iter
+            let mut i = 0;
+            let mut first_encounter_done = false;
+            for c in commits.iter() {
+                if first_encounter_done {
+                    if c.id() == dup.id() {
+                        reduces_string.push_str("┘ ");
+                        break;
+                    } else {
+                        reduces_string.push_str("───");
+                    }
+                } else {
+                    if c.id() == dup.id() {
+                        first_encounter_done = true;
+                        reduces_string.push_str("├─");
+                    } else {
+                        reduces_string.push_str("  ");
+                    }
+                }
+                i = i + 1;
+            }
+        }
+    }
+    if !reduces_string.is_empty() { println!("{}", reduces_string); }
+    match status {
+        Status::Same => {
+        },
+        Status::Increase => {
+        },
+        Status::Decrease => {
+        }
+    }
+    paint_branch(dedup.to_vec());
+
+
+
     /*
     for p in commits {
 
     }
     */
 
-    paint_branch(commits);
 }
 
 pub fn paint_commit_track(commit: Commit) {
