@@ -2,6 +2,13 @@ use std::cmp::Ordering;
 
 use git2::{Commit, Oid, Time};
 
+fn short_id(id: Oid) -> String {
+    let id = id.to_string();
+    unsafe {
+        format!("{}", id.get_unchecked(0..7))
+    }
+}
+
 fn find_max_index(times: Vec<Time>) -> usize {
     let mut max = times[0];
     let mut max_index = 0;
@@ -28,14 +35,12 @@ fn paint(l: usize, max_index: usize, commit: &Commit) {
             // branches_string.push_str("┝ ");
         }
     }
-    unsafe {
-        let id = commit.id().to_string();
-        println!("{} ({}) {} ", branches_string, id.get_unchecked(0..7), commit.summary().unwrap());
-    }
+    let id = short_id(commit.id());
+    println!("{} ({}) {} ", branches_string, id, commit.summary().unwrap());
 }
 
 fn paint_branch(mut commits: Vec<Commit>) {
-    // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| c.id().to_string()).collect();
+    // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
     // println!("{:?}", debug_data);
     let l = commits.len();
     if l == 0 { return }
