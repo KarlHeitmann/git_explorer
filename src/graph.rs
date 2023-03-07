@@ -39,60 +39,58 @@ fn paint(l: usize, max_index: usize, commit: &Commit) {
     println!("{} ({}) {} ", branches_string, id, commit.summary().unwrap());
 }
 
+enum Status {
+    Same,
+    Increase,
+    Decrease,
+}
+
 fn paint_branch(mut commits: Vec<Commit>) {
     // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
     // println!("{:?}", debug_data);
     let l = commits.len();
-    if l == 0 { return }
-    let mut reduced = false;
+    let mut status = Status::Same;
 
-    let mut max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
+    if l == 0 { return }
+
+    // let mut max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
+    let max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
 
     let commit_max = commits[max_index].clone();
 
     // PAINT
     paint(l, max_index, &commit_max);
+    
+    let parents_max: Vec<Commit> = commit_max.parents().collect();
 
-    // REDUCE
-    let cs = commits.clone();
-    'outer: for (i, c) in cs.iter().enumerate() {
-        if c.id() != commit_max.id() {
-            for p in commit_max.parents() {
-                if c.id() == p.id() {
-                    commits.remove(max_index);
-                    if max_index >= i { max_index = max_index - 1; }
-                    reduced = true;
-                    break 'outer;
-                }
-            }
+    match parents_max.len() {
+        0 => {
+            commits.remove(max_index);
+            // println!("├─┘");
+            status = Status::Decrease;
+        },
+        1 => {
+            commits.remove(max_index);
+            commits.insert(max_index, parents_max[0].clone());
+        },
+        _ => {
+            commits.remove(max_index);
+            status = Status::Increase;
+            // println!("├─┐");
+            commits.insert(max_index, parents_max[0].clone());
+            commits.insert(max_index + 1, parents_max[1].clone());
         }
     }
 
-    // CALL
-    match commit_max.parent_count() {
-        0 => {
-            println!("THE END");
-            commits = vec![];
-        }
-        1 => {
-            commits[max_index] = commit_max.parent(0).unwrap();
-            if reduced { println!("├─┘"); }
-        },
-        l => {
-            println!("├─┐");
-            let parents: Vec<Commit> = commit_max.parents().collect();
-            commits.remove(max_index);
-            commits.insert(max_index, parents[0].clone());
-            commits.insert(max_index + 1, parents[1].clone());
+    // commits.du
+    commits.dedup_by(|a,b| a.id() == b.id());
+    /*
+    for p in commits {
 
-            // parents.collect_into(&mut commits)
-        }
-    };
+    }
+    */
 
     paint_branch(commits);
-
-    // let &mut parents: Vec<Commit> = commit_max.parents().collect();
-    // commits.append(parents);
 }
 
 pub fn paint_commit_track(commit: Commit) {
