@@ -3,7 +3,14 @@ use std::io::Stdout;
 use std::io;
 
 use tui::{
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Span, Spans},
     backend::CrosstermBackend,
+    widgets::{
+        Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table, Paragraph, Tabs,
+    },
+
     Terminal
 };
 
@@ -25,15 +32,6 @@ impl From<MenuItem> for usize {
         }
     }
 }
-
-use tui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{
-        Block, BorderType, Borders, Paragraph, Tabs,
-    },
-};
 
 pub fn get_layout_chunks(size: Rect) -> Vec<Rect> {
     Layout::default()
@@ -90,25 +88,66 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(data: &'a Vec<String>) -> Paragraph<'a> {
-    let home = Paragraph::new(data.iter().map(|d| Spans::from(vec![Span::raw(d)])).collect::<Vec<Spans>>())
-    .alignment(Alignment::Left)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::White))
-            .title("Home")
-            .border_type(BorderType::Plain),
+pub fn render_home<'a>(_node_list_state: &ListState, data: &'a Vec<String>) -> (List<'a>, Table<'a>) {
+    let (style_list, style_detail) = (Style::default().fg(Color::Green), Style::default().fg(Color::White));
+    let nodes_block:Block = Block::default()
+        .borders(Borders::ALL)
+        .style(style_list)
+        .title(format!("Graph"))
+        .border_type(BorderType::Plain);
+
+    let items: Vec<ListItem> = data
+        .iter()
+        // .into_iter()
+        .map(|node| {
+            ListItem::new(Spans::from(vec![Span::styled(
+                node,
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let list = List::new(items).block(nodes_block).highlight_style(
+        Style::default()
+            .bg(Color::Yellow)
+            .fg(Color::Black)
+            .add_modifier(Modifier::BOLD),
     );
-    home
+
+    let (file_name, node_detail) = (String::from(""), Table::new(vec![]));
+
+    let node_detail = node_detail
+        .header(Row::new(vec![
+            Cell::from(Span::styled(
+                format!(" {}", file_name),
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
+        ]))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(style_detail)
+                .title("Detail")
+                .border_type(BorderType::Plain),
+        )
+        .widths(&[
+            Constraint::Percentage(100),
+        ]);
+
+    (list, node_detail)
 }
+
+
 
 pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
-    let mut terminal = Terminal::new(backend)?;
+    let mut node_list_state = ListState::default(); // TARGET
+    node_list_state.select(Some(0));
+
+    // let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
@@ -120,15 +159,49 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data:
             let tabs = draw_menu_tabs(&menu_titles, active_menu_item);
 
             rect.render_widget(tabs, chunks[0]);
-            rect.render_widget(render_home(&data), chunks[1]);
+            let nodes_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(
+                    [Constraint::Percentage(80), Constraint::Percentage(20)].as_ref(),
+                )
+                .split(chunks[1]);
+            let (left, right) = render_home(&node_list_state, &data);
+            rect.render_stateful_widget(left, nodes_chunks[0], &mut node_list_state);
+            rect.render_widget(right, nodes_chunks[1]);
+
+            // rect.render_widget(render_home(&data), chunks[1]);
             rect.render_widget(status_bar, chunks[2]);
         })?;
 
         // let terminal = &mut terminal;
         if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
-                break;
+            match key.code {
+                KeyCode::Char('q') => {
+                    break;
+                }
+                KeyCode::Down => {
+                    if let Some(selected) = node_list_state.selected() {
+                        let amount_nodes = data.len(); // TODO: Consider borrow instead of clone
+                        if selected >= amount_nodes - 1 {
+                            node_list_state.select(Some(0));
+                        } else {
+                            node_list_state.select(Some(selected + 1));
+                        }
+                    }
+                }
+                KeyCode::Up => {
+                    if let Some(selected) = node_list_state.selected() {
+                        let amount_nodes = data.len(); // TODO: Consider borrow instead of clone
+                        if selected > 0 {
+                            node_list_state.select(Some(selected - 1));
+                        } else {
+                            node_list_state.select(Some(amount_nodes - 1));
+                        }
+                    }
+                }
+                _ => {}
             }
+
         }
     }
 
