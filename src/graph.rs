@@ -24,15 +24,16 @@ fn find_max_index(times: Vec<Time>) -> usize {
 }
 
 fn paint(l: usize, max_index: usize, commit: &Commit) {
-    // PAINT
+    // PAINT // ┼
     let mut branches_string = String::new();
     for i in 0..l {
-        if i != max_index {
-            branches_string.push_str("│ ")
-        } else {
+        if i == max_index {
+        // if i == l-1 {
             // branches_string.push_str("● ");
             branches_string.push_str("├●");
             // branches_string.push_str("┝ ");
+        } else {
+            branches_string.push_str("│ ")
         }
     }
     let id = short_id(commit.id());
@@ -47,7 +48,7 @@ enum Status {
 }
 
 fn paint_branch(mut commits: Vec<Commit>) {
-    // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
+    let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
     // println!("{:?}", debug_data);
     let l = commits.len();
     let mut status = Status::Same;
@@ -59,6 +60,11 @@ fn paint_branch(mut commits: Vec<Commit>) {
 
     let commit_max = commits[max_index].clone();
 
+    // let dbg = 
+    if short_id(commit_max.id()) == String::from("cdd9917") || short_id(commit_max.id()) == String::from("e5a7eb5") {
+        let aux = 1 + 1;
+    }
+    let commit_max_id = short_id(commit_max.id());
     // PAINT
     paint(l, max_index, &commit_max);
     
@@ -78,7 +84,7 @@ fn paint_branch(mut commits: Vec<Commit>) {
         2 => {
             commits.remove(max_index);
             status = Status::Increase;
-            println!("├─┐");
+            println!("├─{}┐", String::from("┼─").repeat(l-1));
             commits.insert(max_index, parents_max[0].clone());
             commits.insert(max_index + 1, parents_max[1].clone());
         },
@@ -119,7 +125,7 @@ fn paint_branch(mut commits: Vec<Commit>) {
             }
         }
     }
-    if !reduces_string.is_empty() { println!("{}", reduces_string); }
+    // if !reduces_string.is_empty() { println!("{}", reduces_string); }
     match status {
         Status::Same => {
         },
