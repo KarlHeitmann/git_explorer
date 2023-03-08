@@ -1,6 +1,7 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
 use std::io;
+use git2::Oid;
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -88,7 +89,7 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(_node_list_state: &ListState, data: &'a Vec<String>) -> (List<'a>, Table<'a>) {
+pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>) -> (List<'a>, Table<'a>) {
     let (style_list, style_detail) = (Style::default().fg(Color::Green), Style::default().fg(Color::White));
     let nodes_block:Block = Block::default()
         .borders(Borders::ALL)
@@ -101,7 +102,7 @@ pub fn render_home<'a>(_node_list_state: &ListState, data: &'a Vec<String>) -> (
         // .into_iter()
         .map(|node| {
             ListItem::new(Spans::from(vec![Span::styled(
-                node,
+                node.0.clone(),
                 Style::default(),
             )]))
         })
@@ -114,7 +115,11 @@ pub fn render_home<'a>(_node_list_state: &ListState, data: &'a Vec<String>) -> (
             .add_modifier(Modifier::BOLD),
     );
 
-    let (file_name, node_detail) = (String::from(""), Table::new(vec![]));
+    let i = node_list_state.selected().expect("there is always a selected node");
+    // let (file_name, node_detail) = explorer.node_detail(node_list_state.selected().expect("there is always a selected node"), app.offset_detail);
+    // let (file_name, node_detail) = (String::from(data.get(i).unwrap().0.clone()), Table::new(vec![]));
+    let (file_name, node_detail) = (String::from(data.get(i).unwrap().1.to_string()), Table::new(vec![]));
+
 
     let node_detail = node_detail
         .header(Row::new(vec![
@@ -139,7 +144,7 @@ pub fn render_home<'a>(_node_list_state: &ListState, data: &'a Vec<String>) -> (
 
 
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data: Vec<(String, Oid)>) -> Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let menu_titles = vec!["Home", "Quit"];
