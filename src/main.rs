@@ -12,6 +12,7 @@ use tui::{
 use std::io;
 
 mod ui;
+mod utils;
 mod graph;
 
 // #[!warn(dead_code)]

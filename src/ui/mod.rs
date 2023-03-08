@@ -3,6 +3,8 @@ use std::io::Stdout;
 use std::io;
 use git2::Oid;
 
+use crate::utils::short_id;
+
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -116,10 +118,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     );
 
     let i = node_list_state.selected().expect("there is always a selected node");
-    // let (file_name, node_detail) = explorer.node_detail(node_list_state.selected().expect("there is always a selected node"), app.offset_detail);
-    // let (file_name, node_detail) = (String::from(data.get(i).unwrap().0.clone()), Table::new(vec![]));
-    let (file_name, node_detail) = (String::from(data.get(i).unwrap().1.to_string()), Table::new(vec![]));
-
+    let (file_name, node_detail) = (String::from(short_id(data.get(i).unwrap().1)), Table::new(vec![]));
 
     let node_detail = node_detail
         .header(Row::new(vec![

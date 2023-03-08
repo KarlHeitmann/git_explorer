@@ -1,13 +1,5 @@
-use std::cmp::Ordering;
-
 use git2::{Commit, Oid, Time};
-
-fn short_id(id: Oid) -> String {
-    let id = id.to_string();
-    unsafe {
-        format!("{}", id.get_unchecked(0..7))
-    }
-}
+use crate::utils::short_id;
 
 fn find_max_index(times: Vec<Time>) -> usize {
     let mut max = times[0];
