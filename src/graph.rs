@@ -23,7 +23,7 @@ fn find_max_index(times: Vec<Time>) -> usize {
     max_index
 }
 
-fn paint(l: usize, max_index: usize, commit: &Commit) {
+fn paint(l: usize, max_index: usize, commit: &Commit) -> String {
     // PAINT // ┼
     let mut branches_string = String::new();
     for i in 0..l {
@@ -37,7 +37,7 @@ fn paint(l: usize, max_index: usize, commit: &Commit) {
         }
     }
     let id = short_id(commit.id());
-    println!("{} ({}) {} ", branches_string, id, commit.summary().unwrap());
+    format!("{} ({}) {} ", branches_string, id, commit.summary().unwrap())
 }
 
 #[derive(PartialEq)]
@@ -47,13 +47,13 @@ enum Status {
     Decrease,
 }
 
-fn paint_branch(mut commits: Vec<Commit>) {
+fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<String>) -> Vec<String> {
     let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
     // println!("{:?}", debug_data);
     let l = commits.len();
     let mut status = Status::Same;
 
-    if l == 0 { return }
+    if l == 0 { return vec![] }
 
     // let mut max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
     let max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
@@ -66,7 +66,8 @@ fn paint_branch(mut commits: Vec<Commit>) {
     }
     let commit_max_id = short_id(commit_max.id());
     // PAINT
-    paint(l, max_index, &commit_max);
+    let paint_string = paint(l, max_index, &commit_max);
+    output.push(paint_string);
     
     let parents_max: Vec<Commit> = commit_max.parents().collect();
 
@@ -74,7 +75,7 @@ fn paint_branch(mut commits: Vec<Commit>) {
     match parents_max.len() {
         0 => {
             commits.remove(max_index);
-            println!("├─┘");
+            output.push(format!("├─┘"));
             status = Status::Decrease;
         },
         1 => {
@@ -84,7 +85,7 @@ fn paint_branch(mut commits: Vec<Commit>) {
         2 => {
             commits.remove(max_index);
             status = Status::Increase;
-            println!("├─{}┐", String::from("┼─").repeat(l-1));
+            output.push(format!("├─{}┐", String::from("┼─").repeat(l-1)));
             commits.insert(max_index, parents_max[0].clone());
             commits.insert(max_index + 1, parents_max[1].clone());
         },
@@ -134,7 +135,10 @@ fn paint_branch(mut commits: Vec<Commit>) {
         Status::Decrease => {
         }
     }
-    paint_branch(dedup.to_vec());
+    // output.push(paint_branch(dedup.to_vec(), vec![]));
+    let vec_str = paint_branch(dedup.to_vec(), vec![]);
+    // output.join(vec_str);
+    // output.m
 
 
 
@@ -143,10 +147,12 @@ fn paint_branch(mut commits: Vec<Commit>) {
 
     }
     */
-
+    // output
+    // let numbers = [input_layer, middle_layers, output_layer].concat();
+    [output, vec_str].concat()
 }
 
-pub fn paint_commit_track(commit: Commit) {
-    paint_branch(vec![commit]);
+pub fn paint_commit_track(commit: Commit) -> Vec<String> {
+    paint_branch(vec![commit], vec![])
 }
 
