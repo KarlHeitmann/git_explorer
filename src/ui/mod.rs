@@ -8,10 +8,10 @@ use crate::utils::short_id;
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Span, Spans, Text},
     backend::CrosstermBackend,
     widgets::{
-        Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table, Paragraph, Tabs,
+        Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table, Paragraph, Tabs
     },
 
     Terminal
@@ -101,12 +101,11 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
 
     let items: Vec<ListItem> = data
         .iter()
-        // .into_iter()
         .map(|node| {
-            ListItem::new(Spans::from(vec![Span::styled(
-                node.0.clone(),
-                Style::default(),
-            )]))
+            let text = Text::from(node.0.clone());
+            let l = ListItem::new(text);
+            // let l = ListItem::new(Spans::from(vec![Span::styled(node.0.clone(), Style::default(),)]));
+            l
         })
         .collect();
 
@@ -173,7 +172,6 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data:
             rect.render_stateful_widget(left, nodes_chunks[0], &mut node_list_state);
             rect.render_widget(right, nodes_chunks[1]);
 
-            // rect.render_widget(render_home(&data), chunks[1]);
             rect.render_widget(status_bar, chunks[2]);
         })?;
 
