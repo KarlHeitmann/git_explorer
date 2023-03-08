@@ -90,13 +90,9 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(title_home: String) -> Paragraph<'a> {
-    let home = Paragraph::new(vec![
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw(title_home)]),
-        Spans::from(vec![Span::raw("")]),
-    ])
-    .alignment(Alignment::Center)
+pub fn render_home<'a>(data: &'a Vec<String>) -> Paragraph<'a> {
+    let home = Paragraph::new(data.iter().map(|d| Spans::from(vec![Span::raw(d)])).collect::<Vec<Spans>>())
+    .alignment(Alignment::Left)
     .block(
         Block::default()
             .borders(Borders::ALL)
@@ -107,7 +103,7 @@ pub fn render_home<'a>(title_home: String) -> Paragraph<'a> {
     home
 }
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let menu_titles = vec!["Home", "Quit"];
@@ -124,7 +120,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Re
             let tabs = draw_menu_tabs(&menu_titles, active_menu_item);
 
             rect.render_widget(tabs, chunks[0]);
-            rect.render_widget(render_home(String::from("Title")), chunks[1]);
+            rect.render_widget(render_home(&data), chunks[1]);
             rect.render_widget(status_bar, chunks[2]);
         })?;
 

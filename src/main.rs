@@ -78,18 +78,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    //let folder = if cli.folder.is_none() { String::from(".") } else { cli.folder.unwrap() };
+    let data = graph::paint_commit_track(head.peel_to_commit().unwrap());
 
-    ui::explorer_wrapper(&mut terminal)?;
+    ui::explorer_wrapper(&mut terminal, data)?;
 
     disable_raw_mode()?;
     terminal.show_cursor()?;
-
-
-    // test_info(&repo);
-    // graph::paint_commit_track(head.peel_to_commit().unwrap(), 0);
-    let data = graph::paint_commit_track(head.peel_to_commit().unwrap());
-    println!("{}", data.join("\n"));
 
     Ok(())
 }
