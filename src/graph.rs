@@ -1,73 +1,152 @@
-use git2::{Commit, Oid};
+use std::cmp::Ordering;
 
-fn paint_branch_aux(commit: Commit, oid: Oid, offset: u8) {
-    if commit.id() != oid {
-        println!("│ │");
-        println!("│ ● {}", commit.summary().unwrap());
-        paint_branch_aux(commit.parent(0).unwrap(), oid, offset);
-    } else {
-        println!("├─┘");
+use git2::{Commit, Oid, Time};
+
+fn short_id(id: Oid) -> String {
+    let id = id.to_string();
+    unsafe {
+        format!("{}", id.get_unchecked(0..7))
     }
 }
 
-fn paint_branch(commit: Commit, oid: Option<Oid>, offset: u8) {
-    match oid {
-        Some(oid) => {
-            paint_branch_aux(commit, oid, 0);
-        },
-        None => {
-            println!("│");
-            println!("● {}", commit.summary().unwrap());
-            let parents: Vec<Commit> = commit.parents().collect();
-            match parents.len() {
-                0 => {},
-                1 => paint_branch(parents[0].clone(), None, 0),
-                2 => {
-                    let parent_1 = &parents[0];
-                    let parent_2 = &parents[1];
-                    println!("├─┐");
-                    paint_branch(parent_2.clone(), Some(parent_1.id()), 0);
-                    paint_branch(parent_1.clone(), None, 0);
-                },
-                _ => {},
-            }
-        },
+fn find_max_index(times: Vec<Time>) -> usize {
+    let mut max = times[0];
+    let mut max_index = 0;
+
+    for (index, &x) in times.iter().enumerate() {
+        if x > max {
+            max = x;
+            max_index = index;
+        }
     }
+
+    max_index
+}
+
+fn paint(l: usize, max_index: usize, commit: &Commit) {
+    // PAINT // ┼
+    let mut branches_string = String::new();
+    for i in 0..l {
+        if i == max_index {
+        // if i == l-1 {
+            // branches_string.push_str("● ");
+            branches_string.push_str("├●");
+            // branches_string.push_str("┝ ");
+        } else {
+            branches_string.push_str("│ ")
+        }
+    }
+    let id = short_id(commit.id());
+    println!("{} ({}) {} ", branches_string, id, commit.summary().unwrap());
+}
+
+#[derive(PartialEq)]
+enum Status {
+    Same,
+    Increase,
+    Decrease,
+}
+
+fn paint_branch(mut commits: Vec<Commit>) {
+    let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
+    // println!("{:?}", debug_data);
+    let l = commits.len();
+    let mut status = Status::Same;
+
+    if l == 0 { return }
+
+    // let mut max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
+    let max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
+
+    let commit_max = commits[max_index].clone();
+
+    // let dbg = 
+    if short_id(commit_max.id()) == String::from("cdd9917") || short_id(commit_max.id()) == String::from("e5a7eb5") {
+        let aux = 1 + 1;
+    }
+    let commit_max_id = short_id(commit_max.id());
+    // PAINT
+    paint(l, max_index, &commit_max);
+    
+    let parents_max: Vec<Commit> = commit_max.parents().collect();
+
+    // SUBSTITUTE commit_max by all its parents inside the "commits" vector.
+    match parents_max.len() {
+        0 => {
+            commits.remove(max_index);
+            println!("├─┘");
+            status = Status::Decrease;
+        },
+        1 => {
+            commits.remove(max_index);
+            commits.insert(max_index, parents_max[0].clone());
+        },
+        2 => {
+            commits.remove(max_index);
+            status = Status::Increase;
+            println!("├─{}┐", String::from("┼─").repeat(l-1));
+            commits.insert(max_index, parents_max[0].clone());
+            commits.insert(max_index + 1, parents_max[1].clone());
+        },
+        _ => { panic!("AAHHH! There is a commit with more than 2 parents!!! I'm so scared... HINT: Use the case above and apply it to general") }
+    }
+
+    // commits.du
+    // commits.dedup_by(|a,b| a.id() == b.id());
+    let mut binding = commits.clone();
+    let (dedup, duplicates) = binding.partition_dedup_by(|a, b| a.id() == b.id()); // duplicates: each repeated element appears in the array
+
+    let mut reduces_string = String::new();
+    if duplicates.len() > 0 {
+        // println!("{:?}", duplicates);
+        // let binding = commits.clone();
+        // println!("alaracaaaaaaaaaaa");
+        for dup in duplicates {
+            // binding.iter
+            let mut i = 0;
+            let mut first_encounter_done = false;
+            for c in commits.iter() {
+                if first_encounter_done {
+                    if c.id() == dup.id() {
+                        reduces_string.push_str("┘ ");
+                        break;
+                    } else {
+                        reduces_string.push_str("───");
+                    }
+                } else {
+                    if c.id() == dup.id() {
+                        first_encounter_done = true;
+                        reduces_string.push_str("├─");
+                    } else {
+                        reduces_string.push_str("  ");
+                    }
+                }
+                i = i + 1;
+            }
+        }
+    }
+    // if !reduces_string.is_empty() { println!("{}", reduces_string); }
+    match status {
+        Status::Same => {
+        },
+        Status::Increase => {
+        },
+        Status::Decrease => {
+        }
+    }
+    paint_branch(dedup.to_vec());
+
+
+
+    /*
+    for p in commits {
+
+    }
+    */
+
 }
 
 pub fn paint_commit_track(commit: Commit) {
-    match commit.summary() {
-        // Some(message) => println!("{} {}", " ".repeat(offset.into()), message.trim()),
-        Some(message) => println!("● {}", message.trim()),
-        None => {},
-    }
-
-    let parents: Vec<Commit> = commit.parents().collect();
-    match parents.len() {
-        0 => {},
-        1 => {
-            paint_branch(parents[0].clone(), None, 0);
-        },
-        2 => {
-            // NOTE left parent (parents[0]) is the far away commit, right parent (parents[1]) is the closes commit
-            println!("2 PARENTS!");
-            let parent_1 = &parents[0];
-            let parent_2 = &parents[1];
-            paint_branch(parent_1.clone(), None, 0);
-            paint_branch(parent_2.clone(), Some(parent_1.id()), 0);
-            // println!("{} - {}", parent_1.summary().unwrap(), parent_2.summary().unwrap());
-            // println!("{} - {}", parent_1.id(), parent_2.id());
-
-        }
-        _ => {},
-    }
-    /*
-    let mut i = 0;
-    let parents: Vec<Commit> = commit.parents().collect();
-    for parent in parents {
-        paint_commit_track(parent, offset + i);
-        i = i + 1;
-    }
-    */
+    paint_branch(vec![commit]);
 }
 

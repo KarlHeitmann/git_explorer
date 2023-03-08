@@ -1,3 +1,5 @@
+#![feature(iter_collect_into)]
+#![feature(slice_partition_dedup)]
 use git2::{Repository, BranchType};
 
 mod graph;
