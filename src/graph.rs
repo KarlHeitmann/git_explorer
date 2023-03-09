@@ -15,11 +15,17 @@ fn find_max_index(times: Vec<Time>) -> usize {
     max_index
 }
 
-fn paint(l: usize, max_index: usize, commit: &Commit) -> String {
-    let branches_string = format!("{}├●{}",
-       String::from("│ ").repeat(max_index),
-       String::from("│ ").repeat(l - (max_index + 1)),
-   );
+fn paint(l: usize, max_index: usize, commit: &Commit, new_branch: bool) -> String {
+    let branches_string = if new_branch {
+        format!("{}├●{}",
+           String::from("│ ").repeat(max_index),
+           String::from("│ ").repeat(l - (max_index + 1)),
+        )
+    } else {
+        format!("{}├●",
+           String::from("│ ").repeat(l - 1),
+        )
+    };
     let id = short_id(commit.id());
     format!("{} ({}) {} ", branches_string, id, commit.summary().unwrap())
 }
@@ -48,15 +54,18 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
     }
 
     // PAINT
-    let mut paint_string = paint(l, max_index, &commit_max);
 
     let parents_max: Vec<Commit> = commit_max.parents().collect();
+
+    let mut paint_string = paint(l, max_index, &commit_max, parents_max.len() > 1);
+    let mut paint_string_split = String::new();
+    let mut paint_string_join = String::new();
 
     // SUBSTITUTE commit_max by all its parents inside the "commits" vector.
     commits.remove(max_index);
     match parents_max.len() {
         0 => {
-            paint_string.push_str(&format!("\n╽"));
+            paint_string_split.push_str(&format!("\n╽"));
             status = Status::Decrease;
         },
         1 => {
@@ -64,7 +73,7 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
         },
         2 => {
             status = Status::Increase;
-            paint_string.push_str(&format!(
+            paint_string_split.push_str(&format!(
                 "\n{}├{}─┐",
                 String::from("│ ").repeat(max_index),
                 String::from("──").repeat(l - (max_index + 1)),
@@ -78,17 +87,23 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
     let mut binding = commits.clone();
     let (dedup, duplicates) = binding.partition_dedup_by(|a, b| a.id() == b.id());
 
-    let mut reduces_string = String::new();
-
     let dupl_len = duplicates.len();
     if dupl_len > 0 {
-        reduces_string.push_str(&format!(
+        paint_string_join.push_str(&format!(
             "\n{}├─{}┘",
             String::from("│ ").repeat(l-(dupl_len + 1)),
             String::from("──").repeat(dupl_len - 1)
         ));
     }
-    paint_string.push_str(&reduces_string);
+
+    if !paint_string_split.is_empty() && !paint_string_join.is_empty() {
+        // Occured a join and split: deal with it
+        // paint_string.push_str("\n│─┤")
+        paint_string.push_str(&format!("\n{}├─{}┤", String::new().repeat(0), String::new().repeat(0))) // TODO: // XXX: This will fail at any time, recreate a git history branch that will stress this condition
+    } else {
+        paint_string.push_str(&paint_string_split);
+        paint_string.push_str(&paint_string_join);
+    }
 
     match status {
         Status::Same => {
