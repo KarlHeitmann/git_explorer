@@ -125,8 +125,10 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
 
     detail.push_str(
-        &format!("\n{}\n{}\nPARENTS:\n{}\n\n",
+        &format!("\n{}\nCommiter: {}\nAuthor: {}\n{}\nPARENTS:\n{}\n\n",
+            current_commit.message().unwrap_or("NO COMMIT MESSAGE"),
             current_commit.committer().to_string(),
+            current_commit.author(),
             short_id(current_commit.id()),
             parents,
             // current_commit.time(), // TODO add date time to commit detail
@@ -140,7 +142,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     );
 
     let node_detail = Paragraph::new(detail)
-        .block(Block::default().title(format!("{}", sub_tree_oid)).borders(Borders::ALL))
+        .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
         .style(Style::default().fg(Color::White).bg(Color::Black))
         .alignment(Alignment::Left)
         .wrap(Wrap { trim: true });
