@@ -8,7 +8,6 @@ use tui::{
     Terminal
 };
 
-
 use std::io;
 
 mod ui;
@@ -79,9 +78,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    let data = graph::paint_commit_track(head.peel_to_commit().unwrap());
 
-    ui::explorer_wrapper(&mut terminal, data)?;
+    ui::explorer_wrapper(&mut terminal, &repo)?;
 
     disable_raw_mode()?;
     terminal.show_cursor()?;

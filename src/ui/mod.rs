@@ -1,9 +1,10 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
 use std::io;
-use git2::Oid;
+use git2::{Repository, Oid};
 
 use crate::utils::short_id;
+use crate::graph::paint_commit_track;
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -11,7 +12,7 @@ use tui::{
     text::{Span, Spans, Text},
     backend::CrosstermBackend,
     widgets::{
-        Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table, Paragraph, Tabs
+        Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table, Paragraph, Tabs, Wrap
     },
 
     Terminal
@@ -91,7 +92,7 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>) -> (List<'a>, Table<'a>) {
+pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
     let (style_list, style_detail) = (Style::default().fg(Color::Green), Style::default().fg(Color::White));
     let nodes_block:Block = Block::default()
         .borders(Borders::ALL)
@@ -117,38 +118,33 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     );
 
     let i = node_list_state.selected().expect("there is always a selected node");
-    let (file_name, node_detail) = (String::from(short_id(data.get(i).unwrap().1)), Table::new(vec![]));
+    let sub_tree_oid = data.get(i).unwrap().1;
 
-    let node_detail = node_detail
-        .header(Row::new(vec![
-            Cell::from(Span::styled(
-                format!(" {}", file_name),
-                Style::default().add_modifier(Modifier::BOLD),
-            )),
-        ]))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(style_detail)
-                .title("Detail")
-                .border_type(BorderType::Plain),
-        )
-        .widths(&[
-            Constraint::Percentage(100),
-        ]);
+    let file_name = paint_commit_track(repo.find_commit(sub_tree_oid).unwrap())
+        .iter().map(|o| o.0.clone() )
+        .collect::<Vec<String>>().join("\n");
+
+    let node_detail = Paragraph::new(file_name)
+        .block(Block::default().title("Paragraph").borders(Borders::ALL))
+        .style(Style::default().fg(Color::White).bg(Color::Black))
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
 
     (list, node_detail)
 }
 
 
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data: Vec<(String, Oid)>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository) -> Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default(); // TARGET
+    let data = paint_commit_track(repo.head().unwrap().peel_to_commit().unwrap());
     node_list_state.select(Some(0));
+
+    let (mut percentage_left, mut percentage_right) = (80, 20);
 
     // let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
@@ -165,10 +161,10 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data:
             let nodes_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(
-                    [Constraint::Percentage(80), Constraint::Percentage(20)].as_ref(),
+                    [Constraint::Percentage(percentage_left), Constraint::Percentage(percentage_right)].as_ref(),
                 )
                 .split(chunks[1]);
-            let (left, right) = render_home(&node_list_state, &data);
+            let (left, right) = render_home(&node_list_state, &data, &repo);
             rect.render_stateful_widget(left, nodes_chunks[0], &mut node_list_state);
             rect.render_widget(right, nodes_chunks[1]);
 
@@ -180,6 +176,18 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, data:
             match key.code {
                 KeyCode::Char('q') => {
                     break;
+                }
+                KeyCode::Left => {
+                    if percentage_left > 0 {
+                        percentage_left -= 1;
+                        percentage_right += 1;
+                    }
+                }
+                KeyCode::Right => {
+                    if percentage_right > 0 {
+                        percentage_left += 1;
+                        percentage_right -= 1;
+                    }
                 }
                 KeyCode::Down => {
                     if let Some(selected) = node_list_state.selected() {
