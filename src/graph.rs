@@ -26,8 +26,7 @@ fn paint(l: usize, max_index: usize, commit: &Commit, new_branch: bool) -> Strin
            String::from("│ ").repeat(l - 1),
         )
     };
-    let id = short_id(commit.id());
-    format!("{} ({}) {} ", branches_string, id, commit.summary().unwrap())
+    format!("{}", branches_string)
 }
 
 #[derive(PartialEq)]

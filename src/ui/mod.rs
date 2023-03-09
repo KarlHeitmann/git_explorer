@@ -103,7 +103,10 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     let items: Vec<ListItem> = data
         .iter()
         .map(|node| {
-            let text = Text::from(node.0.clone());
+            let grapheme = &node.0;
+            let commit = repo.find_commit(node.1).unwrap();
+            let text = format!("{} ({}) {} ", grapheme.clone(), short_id(commit.id()), commit.summary().unwrap());
+            let text = Text::from(text);
             let l = ListItem::new(text);
             l
         })
