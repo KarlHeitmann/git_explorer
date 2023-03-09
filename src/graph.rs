@@ -17,17 +17,10 @@ fn find_max_index(times: Vec<Time>) -> usize {
 
 fn paint(l: usize, max_index: usize, commit: &Commit) -> String {
     // PAINT // ┼
-    let mut branches_string = String::new();
-    for i in 0..l {
-        if i == max_index {
-        // if i == l-1 {
-            // branches_string.push_str("● ");
-            branches_string.push_str("├●");
-            // branches_string.push_str("┝ ");
-        } else {
-            branches_string.push_str("│ ")
-        }
-    }
+    let branches_string = format!("{}├●{}",
+       String::from("│ ").repeat(max_index),
+       String::from("│ ").repeat(l - (max_index + 1)),
+   );
     let id = short_id(commit.id());
     format!("{} ({}) {} ", branches_string, id, commit.summary().unwrap())
 }
@@ -75,9 +68,11 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
         },
         2 => {
             status = Status::Increase;
-            // paint_string.push_str(&format!("\n├─{}┐", String::from("┼─").repeat(l-1)));
-            // paint_string.push_str(&format!("\n├─{}┐", String::from("│ ").repeat(l-1)));
-            paint_string.push_str(&format!("\n{}├─┐", String::from("│ ").repeat(l-1)));
+            paint_string.push_str(&format!(
+                "\n{}├{}─┐",
+                String::from("│ ").repeat(max_index),
+                String::from("──").repeat(l - (max_index + 1)),
+            ));
             commits.insert(max_index, parents_max[0].clone());
             commits.insert(max_index + 1, parents_max[1].clone());
         },
@@ -92,9 +87,11 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
 
     let dupl_len = duplicates.len();
     if dupl_len > 0 {
-        // reduces_string = String::from("\nXXXXXXXXXXXXXXXXXXXX");
-        // reduces_string.push_str(&format!("\n{}├─┘", String::from("│ ").repeat(l-2)));
-        reduces_string.push_str(&format!("\n{}├─{}┘", String::from("│ ").repeat(l-(dupl_len + 1)), String::from("──").repeat(dupl_len - 1)));
+        reduces_string.push_str(&format!(
+            "\n{}├─{}┘",
+            String::from("│ ").repeat(l-(dupl_len + 1)),
+            String::from("──").repeat(dupl_len - 1)
+        ));
         /*   ─
         for (i, dup) in duplicates.iter().enumerate() {
             let mut first_encounter_done = false;
