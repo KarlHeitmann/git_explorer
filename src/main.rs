@@ -58,17 +58,12 @@ fn test_info(repo: &Repository) {
     println!("{:?}", foreach_result);
 }
 
-// fn main() {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     let repo = match Repository::open(".") {
         Ok(repo) => repo,
         Err(e) => panic!("failed to open: {}", e),
-    };
-    let head = match repo.head() {
-        Ok(repo) => repo,
-        Err(e) => panic!("failed to get head: {}", e),
     };
 
     enable_raw_mode().expect("can run in raw mode");

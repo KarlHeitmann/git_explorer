@@ -16,7 +16,6 @@ fn find_max_index(times: Vec<Time>) -> usize {
 }
 
 fn paint(l: usize, max_index: usize, commit: &Commit) -> String {
-    // PAINT // ┼
     let branches_string = format!("{}├●{}",
        String::from("│ ").repeat(max_index),
        String::from("│ ").repeat(l - (max_index + 1)),
@@ -40,17 +39,14 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
 
     if l == 0 { return vec![] }
 
-    // let mut max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
     let max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
 
     let commit_max = commits[max_index].clone();
 
-    // let dbg = 
     if short_id(commit_max.id()) == String::from("cdd9917") || short_id(commit_max.id()) == String::from("e5a7eb5") {
         let aux = 1 + 1;
     }
 
-    // commit_max_id.split("\n").collect()
     // PAINT
     let mut paint_string = paint(l, max_index, &commit_max);
 
@@ -79,7 +75,6 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
         _ => { panic!("AAHHH! There is a commit with more than 2 parents!!! I'm so scared... HINT: Use the case above and apply it to general") }
     }
 
-
     let mut binding = commits.clone();
     let (dedup, duplicates) = binding.partition_dedup_by(|a, b| a.id() == b.id());
 
@@ -92,29 +87,6 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
             String::from("│ ").repeat(l-(dupl_len + 1)),
             String::from("──").repeat(dupl_len - 1)
         ));
-        /*   ─
-        for (i, dup) in duplicates.iter().enumerate() {
-            let mut first_encounter_done = false;
-            for (j, c) in commits.iter().enumerate() {
-                if first_encounter_done {
-                    if c.id() == dup.id() {
-                        reduces_string.push_str("┘ ");
-                        // paint_string.push_str(&String::from("\nwawawaXXXXXXW"));
-                        break;
-                    } else {
-                        reduces_string.push_str("───");
-                    }
-                } else {
-                    if c.id() == dup.id() {
-                        first_encounter_done = true;
-                        reduces_string.push_str("\n├─");
-                    } else {
-                        reduces_string.push_str("  ");
-                    }
-                }
-            }
-        }
-        */
     }
     paint_string.push_str(&reduces_string);
 

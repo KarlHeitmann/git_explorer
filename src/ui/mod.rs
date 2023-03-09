@@ -12,7 +12,7 @@ use tui::{
     text::{Span, Spans, Text},
     backend::CrosstermBackend,
     widgets::{
-        Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table, Paragraph, Tabs, Wrap
+        Block, BorderType, Borders, List, ListItem, ListState, Paragraph, Tabs, Wrap
     },
 
     Terminal
@@ -93,7 +93,7 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
 }
 
 pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
-    let (style_list, style_detail) = (Style::default().fg(Color::Green), Style::default().fg(Color::White));
+    let style_list = Style::default().fg(Color::White);
     let nodes_block:Block = Block::default()
         .borders(Borders::ALL)
         .style(style_list)
@@ -105,7 +105,6 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
         .map(|node| {
             let text = Text::from(node.0.clone());
             let l = ListItem::new(text);
-            // let l = ListItem::new(Spans::from(vec![Span::styled(node.0.clone(), Style::default(),)]));
             l
         })
         .collect();
@@ -123,10 +122,6 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     let mut detail = String::new();
     let current_commit = repo.find_commit(sub_tree_oid).unwrap();
 
-    // let parents = current_commit.parents();
-    // let parents = current_commit.parents().fold(String::from(""), |acc, c| acc.push_str(short_id(c.id())) );
-    // let parents = current_commit.parents().fold("", |acc, c| acc.push_str(short_id(c.id())) );
-    // let parents = current_commit.parents().fold(String::from(""), |acc, c| format!("{} - {}", acc, short_id(c.id())));
     let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
 
     detail.push_str(
@@ -137,8 +132,6 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
             // current_commit.time(), // TODO add date time to commit detail
         )
     );
-
-
 
     detail.push_str(
         &paint_commit_track(current_commit)
@@ -155,14 +148,12 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     (list, node_detail)
 }
 
-
-
 pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository) -> Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
-    let mut node_list_state = ListState::default(); // TARGET
+    let mut node_list_state = ListState::default();
     let data = paint_commit_track(repo.head().unwrap().peel_to_commit().unwrap());
     node_list_state.select(Some(0));
 
@@ -173,7 +164,6 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
-            // let explorer = &mut explorer;
             let chunks = get_layout_chunks(rect.size());
 
             let status_bar = draw_status_bar();
@@ -194,7 +184,6 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
             rect.render_widget(status_bar, chunks[2]);
         })?;
 
-        // let terminal = &mut terminal;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => {
@@ -214,7 +203,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Down => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = data.len(); // TODO: Consider borrow instead of clone
+                        let amount_nodes = data.len();
                         if selected >= amount_nodes - 1 {
                             node_list_state.select(Some(0));
                         } else {
@@ -224,7 +213,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Up => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = data.len(); // TODO: Consider borrow instead of clone
+                        let amount_nodes = data.len();
                         if selected > 0 {
                             node_list_state.select(Some(selected - 1));
                         } else {
@@ -240,5 +229,4 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
 
     Ok(())
 }
-
 
