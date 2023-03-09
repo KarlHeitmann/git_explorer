@@ -37,13 +37,18 @@ enum Status {
     Decrease,
 }
 
-fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec<(String, Oid)> {
+fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
     // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
     // println!("{:?}", debug_data);
     let l = commits.len();
     let mut status = Status::Same;
 
-    if l == 0 { return vec![] }
+    let (abort, limit_stack) = match limit_stack {
+        Some(limit_stack) => { (l == 0 || limit_stack == 0, Some(limit_stack - 1))},
+        None => {(l == 0, None)}
+    };
+
+    if abort { return vec![] }
 
     let max_index = find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
 
@@ -114,7 +119,7 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
         }
     }
 
-    let vec_str = paint_branch(dedup.to_vec(), vec![]);
+    let vec_str = paint_branch(dedup.to_vec(), vec![], limit_stack);
 
     output.push((paint_string, commit_max.id()));
 
@@ -122,6 +127,9 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>) -> Vec
 }
 
 pub fn paint_commit_track(commit: Commit) -> Vec<(String, Oid)> {
-    paint_branch(vec![commit], vec![])
+    // let limit_stack = 1000; // Works fine
+    let limit_stack = 500; // Works fine
+    // let limit_stack = 10000; // Works, but it is unhandeable :/
+    paint_branch(vec![commit], vec![], Some(limit_stack))
 }
 
