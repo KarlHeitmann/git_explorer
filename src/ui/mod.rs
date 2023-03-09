@@ -211,11 +211,31 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                         }
                     }
                 }
+                KeyCode::PageDown => {
+                    if let Some(selected) = node_list_state.selected() {
+                        let amount_nodes = data.len();
+                        if selected >= amount_nodes - 10 {
+                            node_list_state.select(Some(0));
+                        } else {
+                            node_list_state.select(Some(selected + 10));
+                        }
+                    }
+                }
                 KeyCode::Up => {
                     if let Some(selected) = node_list_state.selected() {
                         let amount_nodes = data.len();
                         if selected > 0 {
                             node_list_state.select(Some(selected - 1));
+                        } else {
+                            node_list_state.select(Some(amount_nodes - 1));
+                        }
+                    }
+                }
+                KeyCode::PageUp => {
+                    if let Some(selected) = node_list_state.selected() {
+                        let amount_nodes = data.len();
+                        if selected > 10 {
+                            node_list_state.select(Some(selected - 10));
                         } else {
                             node_list_state.select(Some(amount_nodes - 1));
                         }
