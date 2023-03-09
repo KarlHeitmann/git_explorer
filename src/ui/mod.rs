@@ -120,12 +120,34 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     let i = node_list_state.selected().expect("there is always a selected node");
     let sub_tree_oid = data.get(i).unwrap().1;
 
-    let file_name = paint_commit_track(repo.find_commit(sub_tree_oid).unwrap())
-        .iter().map(|o| o.0.clone() )
-        .collect::<Vec<String>>().join("\n");
+    let mut detail = String::new();
+    let current_commit = repo.find_commit(sub_tree_oid).unwrap();
 
-    let node_detail = Paragraph::new(file_name)
-        .block(Block::default().title("Paragraph").borders(Borders::ALL))
+    // let parents = current_commit.parents();
+    // let parents = current_commit.parents().fold(String::from(""), |acc, c| acc.push_str(short_id(c.id())) );
+    // let parents = current_commit.parents().fold("", |acc, c| acc.push_str(short_id(c.id())) );
+    // let parents = current_commit.parents().fold(String::from(""), |acc, c| format!("{} - {}", acc, short_id(c.id())));
+    let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
+
+    detail.push_str(
+        &format!("\n{}\n{}\nPARENTS:\n{}\n\n",
+            current_commit.committer().to_string(),
+            short_id(current_commit.id()),
+            parents,
+            // current_commit.time(), // TODO add date time to commit detail
+        )
+    );
+
+
+
+    detail.push_str(
+        &paint_commit_track(current_commit)
+            .iter().map(|o| o.0.clone() )
+            .collect::<Vec<String>>().join("\n")
+    );
+
+    let node_detail = Paragraph::new(detail)
+        .block(Block::default().title(format!("{}", sub_tree_oid)).borders(Borders::ALL))
         .style(Style::default().fg(Color::White).bg(Color::Black))
         .alignment(Alignment::Left)
         .wrap(Wrap { trim: true });
@@ -144,7 +166,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     let data = paint_commit_track(repo.head().unwrap().peel_to_commit().unwrap());
     node_list_state.select(Some(0));
 
-    let (mut percentage_left, mut percentage_right) = (80, 20);
+    // let (mut percentage_left, mut percentage_right) = (60, 40);
+    let (mut percentage_left, mut percentage_right) = (50, 50);
 
     // let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
