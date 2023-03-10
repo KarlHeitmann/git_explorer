@@ -138,18 +138,8 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
         )
     );
 
-    /*
-    detail.push_str(
-        &paint_commit_track(current_commit)
-            .iter().map(|o| o.0.clone() )
-            .collect::<Vec<String>>().join("\n")
-    );
-    */
-
     let mut string_a = String::new();
     let mut string_b = String::new();
-
-    // let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
 
     match data.get(i+1) {
         Some((_, sub_tree_oid_previous)) => {
@@ -172,19 +162,11 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
                     true
                 }),
                 Some(&mut |_, _hunk, line| {
-                    /*
-                    let mut a = line.origin().to_string();
-                    let b = String::from_utf8(line.content().to_vec()).unwrap();
-                    a.push_str(&b);
-                    */
                     let s = format!("{}:{}{}",
                         line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                        // line.old_lineno().unwrap_or_else(|| line.new_lineno().unwrap()),
                         line.origin().to_string(),
                         String::from_utf8(line.content().to_vec()).unwrap()
                     );
-                    // println!("{:?}", a);
-                    // string_b.push_str(&format!("{}", a));
                     string_b.push_str(&s);
                     true
                 }),
