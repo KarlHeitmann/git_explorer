@@ -146,28 +146,55 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
             let previous_commit = repo.find_commit(*sub_tree_oid_previous).unwrap();
 
             let my_first_diff = repo.diff_tree_to_tree(
-                current_commit.tree().ok().as_ref(),
                 previous_commit.tree().ok().as_ref(),
+                current_commit.tree().ok().as_ref(),
                 None
             ).unwrap();
 
             let _foreach_result = my_first_diff.foreach(
                 &mut |_, _| true,
                 None,
-                Some(&mut |_, hunk| {
+                Some(&mut |_, _hunk| {
+                    /*
                     let s = format!("{}\n",
                         String::from_utf8(hunk.header().to_vec()).unwrap()
                     );
                     string_a.push_str(&s);
+                    */
+                    // string_a = String::from_utf8(hunk.header().to_vec()).unwrap();
                     true
                 }),
-                Some(&mut |_, _hunk, line| {
-                    let s = format!("{}:{}{}",
-                        line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                        line.origin().to_string(),
-                        String::from_utf8(line.content().to_vec()).unwrap()
-                    );
-                    string_b.push_str(&s);
+                Some(&mut |_, hunk, line| {
+                    match hunk {
+                        Some(hunk) => {
+                            let hunk = String::from_utf8(hunk.header().to_vec()).unwrap();
+                            if string_a == hunk {
+                                let s = format!("{}:{}{}",
+                                    line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
+                                    line.origin().to_string(),
+                                    String::from_utf8(line.content().to_vec()).unwrap()
+                                );
+                                string_b.push_str(&s);
+                            } else {
+                                let s = format!("{}{}:{}{}",
+                                    hunk,
+                                    line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
+                                    line.origin().to_string(),
+                                    String::from_utf8(line.content().to_vec()).unwrap()
+                                );
+                                string_b.push_str(&s);
+                            }
+                            string_a = hunk;
+                        }
+                        None => {
+                            let s = format!("{}:{}{}",
+                                line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
+                                line.origin().to_string(),
+                                String::from_utf8(line.content().to_vec()).unwrap()
+                            );
+                            string_b.push_str(&s);
+                        }
+                    }
                     true
                 }),
             );
