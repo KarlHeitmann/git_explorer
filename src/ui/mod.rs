@@ -138,6 +138,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
         )
     );
 
+    let mut string_0 = String::from("FD\n");
     let mut string_a = String::new();
     let mut string_b = String::new();
 
@@ -152,7 +153,14 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
             ).unwrap();
 
             let _foreach_result = my_first_diff.foreach(
-                &mut |_, _| true,
+                &mut |delta, _| {
+                    let old_file = delta.old_file();
+                    let old_file = old_file.path().unwrap();
+                    let new_file = delta.new_file();
+                    let new_file = new_file.path().unwrap();
+                    string_0.push_str(&format!("{:?} - {:?}\n", old_file, new_file));
+                    true
+                },
                 None,
                 Some(&mut |_, _hunk| {
                     /*
@@ -202,6 +210,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
         None => {}
     }
 
+    detail.push_str(&string_0);
     detail.push_str(&string_a);
     detail.push_str(&string_b);
 
