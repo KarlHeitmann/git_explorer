@@ -99,12 +99,70 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
         .title(format!("Graph"))
         .border_type(BorderType::Plain);
 
+
+
     let items: Vec<ListItem> = data
         .iter()
         .map(|node| {
             let grapheme = &node.0;
             let commit = repo.find_commit(node.1).unwrap();
-            let text = format!("{} ({}) {} ", grapheme.clone(), short_id(commit.id()), commit.summary().unwrap());
+
+            let mut branches = repo.branches(None).unwrap();
+            let b = branches.find(|branch| {
+                // let b = branch.ok().unwrap().0;
+                // let reference = b.into_reference();
+                // let commit_branch = reference.peel_to_commit().ok().unwrap();
+                // commit_branch.id() == commit.id()
+
+                // let b = &branch.as_ref().ok().unwrap().0;
+                // let reference = b.into_reference();
+
+                let br = &branch.as_ref().ok().unwrap().0;
+                // let br = br.clone();
+                // let reference = br.into_reference();
+                let br = br.get();
+                let commit_branch = br.peel_to_commit().ok().unwrap();
+                commit_branch.id() == commit.id()
+            });
+            // let reference = repo.find_reference(&commit.id().to_string());
+            let reference = match repo.find_reference(&commit.id().to_string()) {
+                /*
+                Some(reference) => reference.shorthand(),
+                None => String::from("NO REF"),
+                */
+                Ok(reference) => reference.shorthand().unwrap().to_string(),
+                Err(_) => String::from("NO REF"),
+            };
+            // let b = b.as_ref().unwrap().ok().unwrap();
+
+            /*
+            let b = b.unwrap().ok().unwrap().0; //.into_reference();
+            let b = b.into_reference();
+            let b = b.shorthand();
+            */
+            let b = match b {
+                Some(b) => {
+                    match b {
+                        Ok(b) => {
+                            let b = b.0; //.into_reference();
+                            let b = b.into_reference();
+                            let b = format!("[{}]", b.shorthand().unwrap().to_string());
+                            b
+                        },
+                        Err(e) => { String::from("ble") }
+                    }
+                }
+                None => { String::from("") }
+            };
+
+            let text = format!(
+                "{} {} ({}) {} ",
+                grapheme.clone(),
+                b,
+                // reference,
+                short_id(commit.id()),
+                commit.summary().unwrap()
+            );
             let text = Text::from(text);
             let l = ListItem::new(text);
             l
