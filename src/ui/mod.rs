@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
-use git2::{Repository, Oid};
+use git2::{Repository, Oid, Commit};
 
 use crate::utils::short_id;
 use crate::graph::paint_commit_track;
@@ -214,11 +214,11 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     (list, node_detail)
 }
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit) -> Result<(), Box<dyn std::error::Error>> {
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
-    let data = paint_commit_track(repo.head().unwrap().peel_to_commit().unwrap());
+    let data = paint_commit_track(root_commit);
     node_list_state.select(Some(0));
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);
@@ -258,8 +258,6 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                         percentage_right += 1;
                     }
                 }
-                KeyCode::Enter => {
-                }
                 KeyCode::Right => {
                     if percentage_right > 0 {
                         percentage_left += 1;
@@ -275,6 +273,12 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                             node_list_state.select(Some(selected + 1));
                         }
                     }
+                }
+                KeyCode::Enter => {
+                    let selected = node_list_state.selected().unwrap();
+                    let sub_tree_oid = data.get(selected).unwrap().1;
+                    let current_commit = repo.find_commit(sub_tree_oid).unwrap();
+                    explorer_wrapper(terminal, repo, current_commit)?;
                 }
                 KeyCode::PageDown => {
                     if let Some(selected) = node_list_state.selected() {

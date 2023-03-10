@@ -15,8 +15,8 @@ mod ui;
 mod utils;
 mod graph;
 
-fn test_info(repo: &Repository) {
     /*
+fn test_info(repo: &Repository) {
     let head = match repo.head() {
         Ok(repo) => repo,
         Err(e) => panic!("failed to get head: {}", e),
@@ -36,29 +36,8 @@ fn test_info(repo: &Repository) {
 
     let workdir = repo.workdir();
     println!("{:?}", workdir);
-    */
- 
-    let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
-
-    let foreach_result = my_first_diff.foreach(
-		&mut |_, _| true,
-		None,
-		Some(&mut |_, hunk| {
-            let a = String::from_utf8(hunk.header().to_vec()).unwrap();
-            println!("{:?}", a);
-			true
-		}),
-		Some(&mut |_, _hunk, line| {
-            let mut a = line.origin().to_string();
-            let b = String::from_utf8(line.content().to_vec()).unwrap();
-            a.push_str(&b);
-            println!("{:?}", a);
-			true
-		}),
-	);
-
-    println!("{:?}", foreach_result);
 }
+    */
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
@@ -76,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.clear()?;
 
 
-    ui::explorer_wrapper(&mut terminal, &repo)?;
+    ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap())?;
 
     disable_raw_mode()?;
     terminal.show_cursor()?;
