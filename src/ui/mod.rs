@@ -146,48 +146,54 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     );
     */
 
+    let mut string_a = String::new();
     let mut string_b = String::new();
 
     // let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
 
-    let sub_tree_oid_previous = data.get(i+1).unwrap().1;
-    let previous_commit = repo.find_commit(sub_tree_oid_previous).unwrap();
+    match data.get(i+1) {
+        Some((_, sub_tree_oid_previous)) => {
+            let previous_commit = repo.find_commit(*sub_tree_oid_previous).unwrap();
 
-    let my_first_diff = repo.diff_tree_to_tree(
-        current_commit.tree().ok().as_ref(),
-        previous_commit.tree().ok().as_ref(),
-        None
-    ).unwrap();
+            let my_first_diff = repo.diff_tree_to_tree(
+                current_commit.tree().ok().as_ref(),
+                previous_commit.tree().ok().as_ref(),
+                None
+            ).unwrap();
 
-    let _foreach_result = my_first_diff.foreach(
-		&mut |_, _| true,
-		None,
-		Some(&mut |_, hunk| {
-            let s = format!("{}\n",
-                String::from_utf8(hunk.header().to_vec()).unwrap()
+            let _foreach_result = my_first_diff.foreach(
+                &mut |_, _| true,
+                None,
+                Some(&mut |_, hunk| {
+                    let s = format!("{}\n",
+                        String::from_utf8(hunk.header().to_vec()).unwrap()
+                    );
+                    string_a.push_str(&s);
+                    true
+                }),
+                Some(&mut |_, _hunk, line| {
+                    /*
+                    let mut a = line.origin().to_string();
+                    let b = String::from_utf8(line.content().to_vec()).unwrap();
+                    a.push_str(&b);
+                    */
+                    let s = format!("{}:{}{}",
+                        line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
+                        // line.old_lineno().unwrap_or_else(|| line.new_lineno().unwrap()),
+                        line.origin().to_string(),
+                        String::from_utf8(line.content().to_vec()).unwrap()
+                    );
+                    // println!("{:?}", a);
+                    // string_b.push_str(&format!("{}", a));
+                    string_b.push_str(&s);
+                    true
+                }),
             );
-            detail.push_str(&s);
-			true
-		}),
-		Some(&mut |_, _hunk, line| {
-            /*
-            let mut a = line.origin().to_string();
-            let b = String::from_utf8(line.content().to_vec()).unwrap();
-            a.push_str(&b);
-            */
-            let s = format!("{}:{}{}",
-                line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                // line.old_lineno().unwrap_or_else(|| line.new_lineno().unwrap()),
-                line.origin().to_string(),
-                String::from_utf8(line.content().to_vec()).unwrap()
-            );
-            // println!("{:?}", a);
-            // string_b.push_str(&format!("{}", a));
-            string_b.push_str(&s);
-			true
-		}),
-	);
+        },
+        None => {}
+    }
 
+    detail.push_str(&string_a);
     detail.push_str(&string_b);
 
     let node_detail = Paragraph::new(detail)
