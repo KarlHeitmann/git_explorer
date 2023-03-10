@@ -15,7 +15,7 @@ fn find_max_index(times: Vec<Time>) -> usize {
     max_index
 }
 
-fn paint(l: usize, max_index: usize, commit: &Commit, new_branch: bool) -> String {
+fn paint(l: usize, max_index: usize, new_branch: bool) -> String {
     let branches_string = if new_branch {
         format!("{}├●{}",
            String::from("│ ").repeat(max_index),
@@ -54,14 +54,14 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_
     let commit_max = commits[max_index].clone();
 
     if short_id(commit_max.id()) == String::from("cdd9917") || short_id(commit_max.id()) == String::from("e5a7eb5") {
-        let aux = 1 + 1;
+        let _aux = 1 + 1;
     }
 
     // PAINT
 
     let parents_max: Vec<Commit> = commit_max.parents().collect();
 
-    let mut paint_string = paint(l, max_index, &commit_max, parents_max.len() > 1);
+    let mut paint_string = paint(l, max_index, parents_max.len() > 1);
     let mut paint_string_split = String::new();
     let mut paint_string_join = String::new();
 

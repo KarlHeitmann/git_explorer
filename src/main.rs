@@ -1,6 +1,7 @@
 #![feature(iter_collect_into)]
 #![feature(slice_partition_dedup)]
-use git2::{Repository, BranchType};
+// use git2::{Repository, BranchType};
+use git2::Repository;
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 use tui::{
@@ -14,8 +15,8 @@ mod ui;
 mod utils;
 mod graph;
 
-// #[!warn(dead_code)]
 fn test_info(repo: &Repository) {
+    /*
     let head = match repo.head() {
         Ok(repo) => repo,
         Err(e) => panic!("failed to get head: {}", e),
@@ -35,6 +36,7 @@ fn test_info(repo: &Repository) {
 
     let workdir = repo.workdir();
     println!("{:?}", workdir);
+    */
  
     let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
 
@@ -78,6 +80,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     disable_raw_mode()?;
     terminal.show_cursor()?;
+
+    // test_info(&repo);
 
     Ok(())
 }

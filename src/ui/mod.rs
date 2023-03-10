@@ -1,6 +1,5 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
-use std::io;
 use git2::{Repository, Oid};
 
 use crate::utils::short_id;
@@ -120,6 +119,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     );
 
     let i = node_list_state.selected().expect("there is always a selected node");
+
     let sub_tree_oid = data.get(i).unwrap().1;
 
     let mut detail = String::new();
@@ -138,11 +138,57 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
         )
     );
 
+    /*
     detail.push_str(
         &paint_commit_track(current_commit)
             .iter().map(|o| o.0.clone() )
             .collect::<Vec<String>>().join("\n")
     );
+    */
+
+    let mut string_b = String::new();
+
+    // let my_first_diff = repo.diff_index_to_workdir(None, None).unwrap();
+
+    let sub_tree_oid_previous = data.get(i+1).unwrap().1;
+    let previous_commit = repo.find_commit(sub_tree_oid_previous).unwrap();
+
+    let my_first_diff = repo.diff_tree_to_tree(
+        current_commit.tree().ok().as_ref(),
+        previous_commit.tree().ok().as_ref(),
+        None
+    ).unwrap();
+
+    let _foreach_result = my_first_diff.foreach(
+		&mut |_, _| true,
+		None,
+		Some(&mut |_, hunk| {
+            let s = format!("{}\n",
+                String::from_utf8(hunk.header().to_vec()).unwrap()
+            );
+            detail.push_str(&s);
+			true
+		}),
+		Some(&mut |_, _hunk, line| {
+            /*
+            let mut a = line.origin().to_string();
+            let b = String::from_utf8(line.content().to_vec()).unwrap();
+            a.push_str(&b);
+            */
+            let s = format!("{}:{}{}",
+                line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
+                // line.old_lineno().unwrap_or_else(|| line.new_lineno().unwrap()),
+                line.origin().to_string(),
+                String::from_utf8(line.content().to_vec()).unwrap()
+            );
+            // println!("{:?}", a);
+            // string_b.push_str(&format!("{}", a));
+            string_b.push_str(&s);
+			true
+		}),
+	);
+
+    detail.push_str(&string_b);
 
     let node_detail = Paragraph::new(detail)
         .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
@@ -154,8 +200,6 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
 }
 
 pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository) -> Result<(), Box<dyn std::error::Error>> {
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
@@ -165,7 +209,6 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     // let (mut percentage_left, mut percentage_right) = (60, 40);
     let (mut percentage_left, mut percentage_right) = (50, 50);
 
-    // let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
@@ -199,6 +242,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                         percentage_left -= 1;
                         percentage_right += 1;
                     }
+                }
+                KeyCode::Enter => {
                 }
                 KeyCode::Right => {
                     if percentage_right > 0 {
