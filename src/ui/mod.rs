@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
-use git2::{Repository, Oid, Commit};
+use git2::{Repository, Oid, Commit, BranchType, Branch};
 
 use crate::utils::short_id;
 use crate::graph::paint_commit_track;
@@ -91,7 +91,7 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
+pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, Option<String>)>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
     let style_list = Style::default().fg(Color::White);
     let nodes_block:Block = Block::default()
         .borders(Borders::ALL)
@@ -107,6 +107,9 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
             let grapheme = &node.0;
             let commit = repo.find_commit(node.1).unwrap();
 
+            if short_id(commit.id()) == String::from("82b9fa2") {
+                let a = 1 + 1;
+            }
             let mut branches = repo.branches(None).unwrap();
             let b = branches.find(|branch| {
                 // let b = branch.ok().unwrap().0;
@@ -155,9 +158,17 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
                 None => { String::from("") }
             };
 
+            // let b = &node.2.unwrap_or(String::new());
+            // let b = node.2.unwrap_or(String::new());
+            let b = node.2.clone();
+            let b = match b {
+                Some(b) => format!("[{}]", b),
+                None => String::new(),
+            };
             let text = format!(
                 "{} {} ({}) {} ",
                 grapheme.clone(),
+                // String::new(),
                 b,
                 // reference,
                 short_id(commit.id()),
@@ -201,7 +212,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid)>
     let mut string_b = String::new();
 
     match data.get(i+1) {
-        Some((_, sub_tree_oid_previous)) => {
+        Some((_, sub_tree_oid_previous, _)) => {
             let previous_commit = repo.find_commit(*sub_tree_oid_previous).unwrap();
 
             let my_first_diff = repo.diff_tree_to_tree(
@@ -285,7 +296,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
-    let data = paint_commit_track(root_commit);
+    let branches = repo.branches(Some(BranchType::Local)).unwrap();
+    let data = paint_commit_track(root_commit, branches);
     node_list_state.select(Some(0));
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);

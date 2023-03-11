@@ -1,4 +1,7 @@
-use git2::{Commit, Oid, Time};
+use git2::{Commit, Oid, Time, Branches, Branch, BranchType};
+
+use std::iter::FromIterator;
+
 use crate::utils::short_id;
 
 fn find_max_index(times: Vec<Time>) -> usize {
@@ -36,7 +39,8 @@ enum Status {
     Decrease,
 }
 
-fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
+fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid, Option<String>)>, limit_stack: Option<usize>, branches: Vec<(Branch, BranchType, String)>) -> Vec<(String, Oid, Option<String>)> {
+// fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
     // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
     // println!("{:?}", debug_data);
     let l = commits.len();
@@ -58,6 +62,18 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_
     }
 
     // PAINT
+    //
+    let mut i_branch = 0;
+    let mut shorthand: Option<String> = None;
+    for branch in branches.iter() {
+        let b = branch.0.get();
+        let commit_branch = b.peel_to_commit().ok().unwrap();
+        if commit_branch.id() == commit_max.id() {
+            shorthand = Some(b.shorthand().unwrap().to_string());
+            break; 
+        }
+        i_branch = i_branch + 1;
+    }
 
     let parents_max: Vec<Commit> = commit_max.parents().collect();
 
@@ -118,17 +134,27 @@ fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_
         }
     }
 
-    let vec_str = paint_branch(dedup.to_vec(), vec![], limit_stack);
+    let vec_str = paint_branch(dedup.to_vec(), vec![], limit_stack, branches);
 
-    output.push((paint_string, commit_max.id()));
+    output.push((paint_string, commit_max.id(), shorthand));
 
     [output, vec_str].concat()
 }
 
-pub fn paint_commit_track(commit: Commit) -> Vec<(String, Oid)> {
+pub fn paint_commit_track(commit: Commit, branches: Branches) -> Vec<(String, Oid, Option<String>)> {
     // let limit_stack = 1000; // Works fine
     let limit_stack = 500; // Works fine
     // let limit_stack = 10000; // Works, but it is unhandeable :/
-    paint_branch(vec![commit], vec![], Some(limit_stack))
+    let branches: Vec<(Branch, BranchType, String)> = branches
+        .map(|b| {
+            let b = b.ok();
+            let b = b.unwrap();
+            let b_aux = &b.0;
+            let name = b_aux.get().shorthand().unwrap().to_string();
+            (b.0, b.1, name)
+        }).collect();
+
+    // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
+    paint_branch(vec![commit], vec![], Some(limit_stack), branches)
 }
 
