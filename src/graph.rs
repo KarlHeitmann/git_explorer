@@ -1,4 +1,5 @@
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use crate::utils::short_id;
 
@@ -9,6 +10,32 @@ enum Status {
     Decrease,
 }
 
+#[derive(Clone)]
+pub struct GraphNode {
+    grapheme: String,
+    oid: Oid,
+    branch_shorthand: Option<String>,
+    summary: String,
+    // TODO: add commit summary
+}
+
+impl GraphNode {
+    pub fn id(&self) -> Oid {
+        self.oid
+    }
+}
+ 
+impl Display for GraphNode {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        let (grapheme, oid, branch_shorthand, summary) = (&self.grapheme, &self.oid, &self.branch_shorthand, &self.summary);
+        let branch_shorthand = match branch_shorthand {
+            Some(branch_shorthand) => { format!("[{}]", branch_shorthand) },
+            None => { String::new() },
+        };
+        write!(f, "{} ({}) {} {}", grapheme, short_id(*oid), branch_shorthand, summary)
+    }
+}
+ 
 pub struct GitExplorer {
     path: Option<String>,
     repo: Repository,
@@ -34,7 +61,7 @@ impl GitExplorer {
         }
     }
 
-    pub fn run(&self) -> Vec<(String, Oid, Option<String>)> {
+    pub fn run(&self) -> Vec<GraphNode> {
         match self.root_oid {
             _ => {
                 let branches = self.repo.branches(Some(BranchType::Local)).unwrap();
@@ -72,7 +99,7 @@ impl GitExplorer {
         format!("{}", branches_string)
     }
 
-    fn paint_branch(&self, mut commits: Vec<Commit>, mut output: Vec<(String, Oid, Option<String>)>, limit_stack: Option<usize>, branches: Vec<(Branch, BranchType, String)>) -> Vec<(String, Oid, Option<String>)> {
+    fn paint_branch(&self, mut commits: Vec<Commit>, mut output: Vec<GraphNode>, limit_stack: Option<usize>, branches: Vec<(Branch, BranchType, String)>) -> Vec<GraphNode> {
     // fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
         // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
         // println!("{:?}", debug_data);
@@ -169,12 +196,14 @@ impl GitExplorer {
 
         let vec_str = self.paint_branch(dedup.to_vec(), vec![], limit_stack, branches);
 
-        output.push((paint_string, commit_max.id(), shorthand));
+        // output.push((paint_string, commit_max.id(), shorthand));
+
+        output.push(GraphNode { grapheme: paint_string, oid: commit_max.id(), branch_shorthand: shorthand, summary: commit_max.summary().unwrap().to_string() });
 
         [output, vec_str].concat()
     }
 
-    pub fn paint_commit_track(&self, commit: Commit, branches: Branches) -> Vec<(String, Oid, Option<String>)> {
+    pub fn paint_commit_track(&self, commit: Commit, branches: Branches) -> Vec<GraphNode> {
         // let limit_stack = 1000; // Works fine
         let limit_stack = 500; // Works fine
         // let limit_stack = 10000; // Works, but it is unhandeable :/

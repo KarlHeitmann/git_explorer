@@ -2,6 +2,7 @@ use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
 use git2::{Repository, Oid, Commit, BranchType};
 
+use crate::graph::GraphNode;
 use crate::{utils::short_id, graph::GitExplorer};
 
 use tui::{
@@ -90,7 +91,7 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, Option<String>)>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
+pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<GraphNode>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
     let style_list = Style::default().fg(Color::White);
     let nodes_block:Block = Block::default()
         .borders(Borders::ALL)
@@ -101,25 +102,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
     let items: Vec<ListItem> = data
         .iter()
         .map(|node| {
-            let grapheme = &node.0;
-            let commit = repo.find_commit(node.1).unwrap();
-
-            if short_id(commit.id()) == String::from("82b9fa2") {
-                let a = 1 + 1;
-            }
-
-            let b = node.2.clone();
-            let b = match b {
-                Some(b) => format!("[{}]", b),
-                None => String::new(),
-            };
-            let text = format!(
-                "{} ({}) {} {} ",
-                grapheme.clone(),
-                short_id(commit.id()),
-                b,
-                commit.summary().unwrap()
-            );
+            let text = format!("{}", node);
             let text = Text::from(text);
             let l = ListItem::new(text);
             l
@@ -135,7 +118,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
 
     let i = node_list_state.selected().expect("there is always a selected node");
 
-    let sub_tree_oid = data.get(i).unwrap().1;
+    let sub_tree_oid = data.get(i).unwrap().id();
 
     let mut detail = String::new();
     let current_commit = repo.find_commit(sub_tree_oid).unwrap();
@@ -157,8 +140,9 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
     let mut string_b = String::new();
 
     match data.get(i+1) {
-        Some((_, sub_tree_oid_previous, _)) => {
-            let previous_commit = repo.find_commit(*sub_tree_oid_previous).unwrap();
+        Some(graph_node) => {
+            let sub_tree_oid_previous = graph_node.id();
+            let previous_commit = repo.find_commit(sub_tree_oid_previous).unwrap();
 
             let my_first_diff = repo.diff_tree_to_tree(
                 previous_commit.tree().ok().as_ref(),
@@ -300,7 +284,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Enter => {
                     let selected = node_list_state.selected().unwrap();
-                    let sub_tree_oid = data.get(selected).unwrap().1;
+                    let sub_tree_oid = data.get(selected).unwrap().id();
                     let current_commit = repo.find_commit(sub_tree_oid).unwrap();
                     explorer_wrapper(terminal, repo, current_commit)?;
                 }
