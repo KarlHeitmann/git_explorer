@@ -2,8 +2,7 @@ use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
 use git2::{Repository, Oid, Commit, BranchType};
 
-use crate::utils::short_id;
-use crate::graph::paint_commit_track;
+use crate::{utils::short_id, graph::GitExplorer};
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -242,8 +241,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
-    let branches = repo.branches(Some(BranchType::Local)).unwrap();
-    let data = paint_commit_track(root_commit, branches);
+    let git_explorer = GitExplorer::new(None, None);
+    let data = git_explorer.run();
     node_list_state.select(Some(0));
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);
