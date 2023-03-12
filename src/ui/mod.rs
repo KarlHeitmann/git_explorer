@@ -17,6 +17,42 @@ use tui::{
     Terminal
 };
 
+impl From<&GraphNode> for Spans<'_> {
+    fn from(graph_node: &GraphNode) -> Self {
+        let (grapheme, oid, branch_shorthand, summary) = (&graph_node.grapheme, graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
+        let branch_shorthand = match branch_shorthand {
+            Some(b) => format!("[{}] ", b.to_string()),
+            None => String::new()
+        };
+        Spans::from(
+            {
+                match grapheme.split_once("\n") {
+                    Some((g1, g_right)) => format!("{} ({}) {}{}\n{}", g1, short_id(oid), branch_shorthand, summary, g_right),
+                    None => format!("{} ({}) {}{}", grapheme, short_id(oid), branch_shorthand, summary),
+                }
+            }
+        )
+    }
+}
+ 
+impl From<&GraphNode> for Text<'_> {
+    fn from(graph_node: &GraphNode) -> Self {
+        let (grapheme, oid, branch_shorthand, summary) = (&graph_node.grapheme, graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
+        let branch_shorthand = match branch_shorthand {
+            Some(b) => format!("[{}] ", b.to_string()),
+            None => String::new()
+        };
+        Text::from(
+            {
+                match grapheme.split_once("\n") {
+                    Some((g1, g_right)) => format!("{} ({}) {}{}\n{}", g1, short_id(oid), branch_shorthand, summary, g_right),
+                    None => format!("{} ({}) {}{}", grapheme, short_id(oid), branch_shorthand, summary),
+                }
+            }
+        )
+    }
+}
+ 
 #[derive(Copy, Clone, Debug)]
 pub enum MenuItem {
     Home,
@@ -102,8 +138,9 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<GraphNode>, re
     let items: Vec<ListItem> = data
         .iter()
         .map(|node| {
-            let text = format!("{}", node);
-            let text = Text::from(text);
+            // let text = Text::from(node.clone());
+            let text = Text::from(node);
+            // let text = Spans::from(node);
             let l = ListItem::new(text);
             l
         })

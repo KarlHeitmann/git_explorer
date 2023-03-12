@@ -12,10 +12,10 @@ enum Status {
 
 #[derive(Clone)]
 pub struct GraphNode {
-    grapheme: String,
-    oid: Oid,
-    branch_shorthand: Option<String>,
-    summary: String,
+    pub grapheme: String,
+    pub oid: Oid,
+    pub branch_shorthand: Option<String>,
+    pub summary: String,
     // TODO: add commit summary
 }
 
