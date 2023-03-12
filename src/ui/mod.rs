@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
-use git2::{Repository, Oid, Commit, BranchType, Branch};
+use git2::{Repository, Oid, Commit, BranchType};
 
 use crate::utils::short_id;
 use crate::graph::paint_commit_track;
@@ -99,8 +99,6 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
         .title(format!("Graph"))
         .border_type(BorderType::Plain);
 
-
-
     let items: Vec<ListItem> = data
         .iter()
         .map(|node| {
@@ -110,68 +108,17 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
             if short_id(commit.id()) == String::from("82b9fa2") {
                 let a = 1 + 1;
             }
-            let mut branches = repo.branches(None).unwrap();
-            let b = branches.find(|branch| {
-                // let b = branch.ok().unwrap().0;
-                // let reference = b.into_reference();
-                // let commit_branch = reference.peel_to_commit().ok().unwrap();
-                // commit_branch.id() == commit.id()
 
-                // let b = &branch.as_ref().ok().unwrap().0;
-                // let reference = b.into_reference();
-
-                let br = &branch.as_ref().ok().unwrap().0;
-                // let br = br.clone();
-                // let reference = br.into_reference();
-                let br = br.get();
-                let commit_branch = br.peel_to_commit().ok().unwrap();
-                commit_branch.id() == commit.id()
-            });
-            // let reference = repo.find_reference(&commit.id().to_string());
-            let reference = match repo.find_reference(&commit.id().to_string()) {
-                /*
-                Some(reference) => reference.shorthand(),
-                None => String::from("NO REF"),
-                */
-                Ok(reference) => reference.shorthand().unwrap().to_string(),
-                Err(_) => String::from("NO REF"),
-            };
-            // let b = b.as_ref().unwrap().ok().unwrap();
-
-            /*
-            let b = b.unwrap().ok().unwrap().0; //.into_reference();
-            let b = b.into_reference();
-            let b = b.shorthand();
-            */
-            let b = match b {
-                Some(b) => {
-                    match b {
-                        Ok(b) => {
-                            let b = b.0; //.into_reference();
-                            let b = b.into_reference();
-                            let b = format!("[{}]", b.shorthand().unwrap().to_string());
-                            b
-                        },
-                        Err(e) => { String::from("ble") }
-                    }
-                }
-                None => { String::from("") }
-            };
-
-            // let b = &node.2.unwrap_or(String::new());
-            // let b = node.2.unwrap_or(String::new());
             let b = node.2.clone();
             let b = match b {
                 Some(b) => format!("[{}]", b),
                 None => String::new(),
             };
             let text = format!(
-                "{} {} ({}) {} ",
+                "{} ({}) {} {} ",
                 grapheme.clone(),
-                // String::new(),
-                b,
-                // reference,
                 short_id(commit.id()),
+                b,
                 commit.summary().unwrap()
             );
             let text = Text::from(text);
@@ -203,7 +150,6 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
             current_commit.author(),
             short_id(current_commit.id()),
             parents,
-            // current_commit.time(), // TODO add date time to commit detail
         )
     );
 

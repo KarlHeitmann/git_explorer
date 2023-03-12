@@ -1,7 +1,5 @@
 use git2::{Commit, Oid, Time, Branches, Branch, BranchType};
 
-use std::iter::FromIterator;
-
 use crate::utils::short_id;
 
 fn find_max_index(times: Vec<Time>) -> usize {
