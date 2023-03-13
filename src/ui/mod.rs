@@ -279,12 +279,29 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
             let tabs = draw_menu_tabs(&menu_titles, active_menu_item);
 
             rect.render_widget(tabs, chunks[0]);
+            let vertical_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [Constraint::Length(3), Constraint::Min(5)].as_ref()
+                )
+                .split(chunks[1]);
+
+            let mut branches_string = String::new();
+            for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                let b = branch.unwrap();
+                let b = b.0.get().shorthand();
+                branches_string.push_str(&format!("{} ", b.unwrap()));
+            }
+            let text = Text::from(branches_string);
+            let paragraph = Paragraph::new(text);
+            rect.render_widget(paragraph, vertical_chunks[0]);
+
             let nodes_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(
                     [Constraint::Percentage(percentage_left), Constraint::Percentage(percentage_right)].as_ref(),
                 )
-                .split(chunks[1]);
+                .split(vertical_chunks[1]);
             let (left, right) = render_home(&node_list_state, &data, &repo);
             rect.render_stateful_widget(left, nodes_chunks[0], &mut node_list_state);
             rect.render_widget(right, nodes_chunks[1]);
