@@ -17,21 +17,51 @@ use tui::{
     Terminal
 };
 
-impl From<&GraphNode> for Spans<'_> {
+impl From<&GraphNode> for ListItem<'_> {
     fn from(graph_node: &GraphNode) -> Self {
-        let (grapheme, oid, branch_shorthand, summary) = (&graph_node.grapheme, graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
+        let (mut grapheme, oid, branch_shorthand, summary) = (graph_node.grapheme.clone(), graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
         let branch_shorthand = match branch_shorthand {
             Some(b) => format!("[{}] ", b.to_string()),
             None => String::new()
         };
+
+        // let mut grapheme = grapheme.clone();
+        grapheme.push(' ');
+        let oid = format!("{} ", short_id(oid));
+        let spans = Spans::from(
+            vec![
+                Span::styled(grapheme, Style::default().fg(Color::Rgb(50, 50, 255))),
+                Span::raw(oid),
+                Span::styled(branch_shorthand, Style::default().fg(Color::Rgb(255, 50, 50))),
+                Span::raw(summary.clone(), ),
+            ]
+        );
+        ListItem::new(spans)
+        /*
         Spans::from(
             {
                 match grapheme.split_once("\n") {
-                    Some((g1, g_right)) => format!("{} ({}) {}{}\n{}", g1, short_id(oid), branch_shorthand, summary, g_right),
-                    None => format!("{} ({}) {}{}", grapheme, short_id(oid), branch_shorthand, summary),
+                    Some((g1, g_right)) => {
+                        vec![
+                            Span::raw(g1),
+                            Span::raw(short_id(oid)),
+                            Span::raw(branch_shorthand),
+                            Span::raw(summary),
+                            Span::raw(g_right)
+                        ]
+                    },
+                    None => {
+                        vec![
+                            Span::raw(grapheme),
+                            Span::raw(short_id(oid)),
+                            Span::raw(branch_shorthand),
+                            Span::raw(summary)
+                        ]
+                    },
                 }
             }
         )
+        */
     }
 }
  
@@ -137,13 +167,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<GraphNode>, re
 
     let items: Vec<ListItem> = data
         .iter()
-        .map(|node| {
-            // let text = Text::from(node.clone());
-            let text = Text::from(node);
-            // let text = Spans::from(node);
-            let l = ListItem::new(text);
-            l
-        })
+        .map(|node| node.into())
         .collect();
 
     let list = List::new(items).block(nodes_block).highlight_style(
