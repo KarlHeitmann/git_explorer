@@ -199,10 +199,27 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 .split(chunks[1]);
 
             let mut branches_string = String::new();
-            for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                let b = branch.unwrap();
-                let b = b.0.get().shorthand();
-                branches_string.push_str(&format!("{} ", b.unwrap()));
+
+            match repo.head() {
+                Ok(head) => {
+                    for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                        let b = branch.unwrap();
+                        let b = b.0.get().shorthand().unwrap().to_string();
+                        let head = head.shorthand().unwrap().to_string();
+                        // if head == b { continue; }
+                        // if head != b && head.contains(&b)  {
+                        if head.contains(&b) || b.contains(&head) {
+                            branches_string.push_str(&format!("{}, ", b));
+                        }
+                    }
+                },
+                Err(_) => {
+                    for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                        let b = branch.unwrap();
+                        let b = b.0.get().shorthand().unwrap().to_string();
+                        branches_string.push_str(&format!("{} ", b));
+                    }
+                }
             }
             let text = Text::from(branches_string);
             let paragraph = Paragraph::new(text);
