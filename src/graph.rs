@@ -63,6 +63,11 @@ impl<'a> GitExplorer {
         }
     }
 
+    pub fn update_graph(mut self, stop_condition: Option<(Oid, String)>) -> Vec<GraphNode> {
+        self.stop_condition = stop_condition;
+        self.run()
+    }
+
     pub fn diff_commit(&self, commit_1: Commit, commit_2: &Option<&GraphNode>) -> String {
         let current_commit = commit_1;
 
