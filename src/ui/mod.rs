@@ -181,6 +181,34 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     // let (mut percentage_left, mut percentage_right) = (60, 40);
     let (mut percentage_left, mut percentage_right) = (50, 50);
 
+    // let mut branches_string = String::new();
+
+    let branches_string = match repo.head() {
+        Ok(head) => {
+            let mut aux_string = String::new();
+            for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                let b = branch.unwrap();
+                let b = b.0.get().shorthand().unwrap().to_string();
+                let head = head.shorthand().unwrap().to_string();
+                // if head == b { continue; }
+                // if head != b && head.contains(&b)  {
+                if head.contains(&b) || b.contains(&head) {
+                    aux_string.push_str(&format!("{}, ", b));
+                }
+            }
+            aux_string
+        },
+        Err(_) => {
+            let mut aux_string = String::new();
+            for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                let b = branch.unwrap();
+                let b = b.0.get().shorthand().unwrap().to_string();
+                aux_string.push_str(&format!("{} ", b));
+            }
+            aux_string
+        }
+    };
+
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
@@ -198,30 +226,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 )
                 .split(chunks[1]);
 
-            let mut branches_string = String::new();
 
-            match repo.head() {
-                Ok(head) => {
-                    for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                        let b = branch.unwrap();
-                        let b = b.0.get().shorthand().unwrap().to_string();
-                        let head = head.shorthand().unwrap().to_string();
-                        // if head == b { continue; }
-                        // if head != b && head.contains(&b)  {
-                        if head.contains(&b) || b.contains(&head) {
-                            branches_string.push_str(&format!("{}, ", b));
-                        }
-                    }
-                },
-                Err(_) => {
-                    for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                        let b = branch.unwrap();
-                        let b = b.0.get().shorthand().unwrap().to_string();
-                        branches_string.push_str(&format!("{} ", b));
-                    }
-                }
-            }
-            let text = Text::from(branches_string);
+            let text = Text::from(branches_string.clone());
             let paragraph = Paragraph::new(text);
             rect.render_widget(paragraph, vertical_chunks[0]);
 
