@@ -62,7 +62,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut branches = repo.branches(Some(BranchType::Local)).unwrap();
             match branches.find(|b| b.as_ref().unwrap().0.get().shorthand().unwrap().to_string().contains(stop_condition)) {
                 Some(Ok((branch, _))) => {
-                    ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap(), Some(branch))?
+                    let reference = branch.get();
+                    let oid = reference.target().unwrap();
+                    let shorthand = reference.shorthand().unwrap();
+                    ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap(), Some((oid, shorthand.to_string())))?
                 },
                 _ => ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap(), None)?,
             };

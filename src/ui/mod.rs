@@ -170,7 +170,7 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<GraphNode>, re
     (list, node_detail)
 }
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit, stop_condition: Option<Branch>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
@@ -183,29 +183,37 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
 
     // let mut branches_string = String::new();
 
-    let branches_string = match repo.head() {
+    let (branches_strings, branches_ids) = match repo.head() {
         Ok(head) => {
-            let mut aux_string = String::new();
+            let mut aux_strings = vec![];
+            // let mut aux_strings: Vec<&str> = vec![];
+            // let mut aux_string = String::new();
+            let mut aux_ids = vec![];
             for branch in repo.branches(Some(BranchType::Local)).unwrap() {
                 let b = branch.unwrap();
-                let b = b.0.get().shorthand().unwrap().to_string();
+                let b_string = b.0.get().shorthand().unwrap().to_string();
                 let head = head.shorthand().unwrap().to_string();
                 // if head == b { continue; }
                 // if head != b && head.contains(&b)  {
-                if head.contains(&b) || b.contains(&head) {
-                    aux_string.push_str(&format!("{}, ", b));
+                if head.contains(&b_string) || b_string.contains(&head) {
+                    aux_strings.push(format!("{}, ", b_string));
+                    aux_ids.push(b);
                 }
             }
-            aux_string
+            (aux_strings, aux_ids)
         },
         Err(_) => {
-            let mut aux_string = String::new();
+            let mut aux_strings = vec![];
+            // let mut aux_strings: Vec<&str> = vec![];
+            // let mut aux_strings = String::new();
+            let mut aux_ids = vec![];
             for branch in repo.branches(Some(BranchType::Local)).unwrap() {
                 let b = branch.unwrap();
-                let b = b.0.get().shorthand().unwrap().to_string();
-                aux_string.push_str(&format!("{} ", b));
+                let b_string = b.0.get().shorthand().unwrap().to_string();
+                aux_strings.push(format!("{} ", b_string));
+                aux_ids.push(b);
             }
-            aux_string
+            (aux_strings, aux_ids)
         }
     };
 
@@ -227,7 +235,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 .split(chunks[1]);
 
 
-            let text = Text::from(branches_string.clone());
+            // let text = Text::from(branches_strings);
+            let text = Spans::from(branches_strings.iter().map(|b| Span::from(b.as_ref())).collect::<Vec<Span>>());
             let paragraph = Paragraph::new(text);
             rect.render_widget(paragraph, vertical_chunks[0]);
 
@@ -246,6 +255,8 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
 
         if let Event::Key(key) = event::read()? {
             match key.code {
+                KeyCode::Tab => {
+                }
                 KeyCode::Char('q') => {
                     break;
                 }

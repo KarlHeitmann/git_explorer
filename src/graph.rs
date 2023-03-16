@@ -36,15 +36,15 @@ impl Display for GraphNode {
     }
 }
  
-pub struct GitExplorer<'a> {
+pub struct GitExplorer {
     path: Option<String>,
     repo: Repository,
     root_oid: Option<Oid>,
-    stop_condition: Option<Branch<'a>>
+    stop_condition: Option<(Oid, String)>
 }
 
-impl<'a> GitExplorer<'a> {
-    pub fn new(path: Option<String>, root_oid: Option<Oid>, stop_condition: Option<Branch<'a>>) -> Self {
+impl<'a> GitExplorer {
+    pub fn new(path: Option<String>, root_oid: Option<Oid>, stop_condition: Option<(Oid, String)>) -> Self {
 
         let repo = match path {
             _ => {
@@ -298,8 +298,9 @@ impl<'a> GitExplorer<'a> {
 
         let abort_next = match &self.stop_condition {
             Some(stop_condition) => {
-                let reference = stop_condition.get();
-                reference.peel_to_commit().unwrap().id() == commit_max.id()
+                // let reference = stop_condition.get();
+                // reference.peel_to_commit().unwrap().id() == commit_max.id()
+                stop_condition.0 == commit_max.id()
             }
             _ => false
         };
