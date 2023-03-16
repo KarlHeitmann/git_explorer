@@ -36,14 +36,15 @@ impl Display for GraphNode {
     }
 }
  
-pub struct GitExplorer {
+pub struct GitExplorer<'a> {
     path: Option<String>,
     repo: Repository,
     root_oid: Option<Oid>,
+    stop_condition: Option<Branch<'a>>
 }
 
-impl GitExplorer {
-    pub fn new(path: Option<String>, root_oid: Option<Oid>) -> Self {
+impl<'a> GitExplorer<'a> {
+    pub fn new(path: Option<String>, root_oid: Option<Oid>, stop_condition: Option<Branch<'a>>) -> Self {
 
         let repo = match path {
             _ => {
@@ -55,6 +56,7 @@ impl GitExplorer {
         };
 
         Self {
+            stop_condition,
             repo,
             root_oid,
             path,
@@ -193,7 +195,13 @@ impl GitExplorer {
         format!("{}", branches_string)
     }
 
-    fn paint_branch(&self, mut commits: Vec<Commit>, mut output: Vec<GraphNode>, limit_stack: Option<usize>, branches: Vec<(Branch, BranchType, String)>) -> Vec<GraphNode> {
+    fn paint_branch(
+        &self,
+        mut commits: Vec<Commit>,
+        mut output: Vec<GraphNode>,
+        limit_stack: Option<usize>,
+        branches: Vec<(Branch, BranchType, String)>,
+        abort: bool) -> Vec<GraphNode> {
     // fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
         // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
         // println!("{:?}", debug_data);
@@ -201,8 +209,8 @@ impl GitExplorer {
         let mut status = Status::Same;
 
         let (abort, limit_stack) = match limit_stack {
-            Some(limit_stack) => { (l == 0 || limit_stack == 0, Some(limit_stack - 1))},
-            None => {(l == 0, None)}
+            Some(limit_stack) => { (abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
+            None => {(abort || l == 0, None)}
         };
 
         if abort { return vec![] }
@@ -288,9 +296,15 @@ impl GitExplorer {
             }
         }
 
-        let vec_str = self.paint_branch(dedup.to_vec(), vec![], limit_stack, branches);
+        let abort_next = match &self.stop_condition {
+            Some(stop_condition) => {
+                let reference = stop_condition.get();
+                reference.peel_to_commit().unwrap().id() == commit_max.id()
+            }
+            _ => false
+        };
 
-        // output.push((paint_string, commit_max.id(), shorthand));
+        let vec_str = self.paint_branch(dedup.to_vec(), vec![], limit_stack, branches, abort_next);
 
         output.push(GraphNode { grapheme: paint_string, oid: commit_max.id(), branch_shorthand: shorthand, summary: commit_max.summary().unwrap().to_string() });
 
@@ -311,7 +325,7 @@ impl GitExplorer {
             }).collect();
 
         // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
-        self.paint_branch(vec![commit], vec![], Some(limit_stack), branches)
+        self.paint_branch(vec![commit], vec![], Some(limit_stack), branches, false)
     }
 
 }

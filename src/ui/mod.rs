@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
-use git2::{Repository, Oid, Commit, BranchType};
+use git2::{Repository, Branch, Oid, Commit, BranchType};
 
 use crate::graph::GraphNode;
 use crate::{utils::short_id, graph::GitExplorer};
@@ -170,11 +170,11 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<GraphNode>, re
     (list, node_detail)
 }
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit, stop_condition: Option<Branch>) -> Result<(), Box<dyn std::error::Error>> {
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
-    let git_explorer = GitExplorer::new(None, None);
+    let git_explorer = GitExplorer::new(None, None, stop_condition); // TARGET
     let data = git_explorer.run();
     node_list_state.select(Some(0));
 
@@ -252,7 +252,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                     let selected = node_list_state.selected().unwrap();
                     let sub_tree_oid = data.get(selected).unwrap().id();
                     let current_commit = repo.find_commit(sub_tree_oid).unwrap();
-                    explorer_wrapper(terminal, repo, current_commit)?;
+                    explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
                 }
                 KeyCode::PageDown => {
                     if let Some(selected) = node_list_state.selected() {
