@@ -183,32 +183,6 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     // let (mut percentage_left, mut percentage_right) = (60, 40);
     let (mut percentage_left, mut percentage_right) = (50, 50);
 
-    // let mut branches_string = String::new();
-
-    // let mut stop_conditions: Vec<Option<Oid, String>> = vec!(stop_condition);
-    let mut stop_conditions = vec!(stop_condition);
-    // let (branches_strings, branches_ids) = match repo.head() {
-    match repo.head() {
-        Ok(head) => {
-            for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                let b = branch.unwrap();
-                let b_string = b.0.get().shorthand().unwrap().to_string();
-                let head = head.shorthand().unwrap().to_string();
-                if head.contains(&b_string) || b_string.contains(&head) {
-                    stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
-                }
-            }
-        },
-        Err(_) => {
-            for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                let b = branch.unwrap();
-                let b_string = b.0.get().shorthand().unwrap().to_string();
-                stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
-            }
-        }
-    };
-    let stop_conditions = stop_conditions;
-
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
@@ -228,7 +202,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
 
 
             // let text = Text::from(branches_strings);
-            let branches_strings: Vec<String> = stop_conditions.iter().map(|sc| sc.clone().unwrap_or_else(|| { (Oid::zero(), String::from("None") )}).1).collect();
+            let branches_strings: Vec<String> = git_explorer.branches_strings();
             let text = Spans::from(branches_strings.iter().map(|b| Span::from(b.as_ref())).collect::<Vec<Span>>());
             let paragraph = Paragraph::new(text);
             rect.render_widget(paragraph, vertical_chunks[0]);

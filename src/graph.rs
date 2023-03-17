@@ -40,9 +40,10 @@ pub struct GitExplorer {
     path: Option<String>,
     repo: Repository,
     root_oid: Option<Oid>,
-    stop_condition: Option<(Oid, String)>,
     pub nodes: Vec<GraphNode>,
     is_updated: bool,
+    stop_condition_i: usize,
+    stop_conditions: Vec<Option<(Oid, String)>>,
     pub nodes_len: usize,
 }
 
@@ -58,15 +59,42 @@ impl<'a> GitExplorer {
             }
         };
 
+        let mut stop_conditions = vec![stop_condition];
+
+        match repo.head() {
+            Ok(head) => {
+                for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                    let b = branch.unwrap();
+                    let b_string = b.0.get().shorthand().unwrap().to_string();
+                    let head = head.shorthand().unwrap().to_string();
+                    if head.contains(&b_string) || b_string.contains(&head) {
+                        stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
+                    }
+                }
+            },
+            Err(_) => {
+                for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                    let b = branch.unwrap();
+                    let b_string = b.0.get().shorthand().unwrap().to_string();
+                    stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
+                }
+            }
+        };
+
         Self {
-            stop_condition,
+            stop_condition_i: 0,
             repo,
             root_oid,
             path,
+            stop_conditions,
             nodes: vec![],
             is_updated: false,
             nodes_len: 0,
         }
+    }
+
+    pub fn branches_strings(&self) -> Vec<String> {
+        self.stop_conditions.iter().map(|sc| sc.clone().unwrap_or_else(|| { (Oid::zero(), String::from("None") )}).1).collect()
     }
 
     pub fn get_node_id(&self, i: usize) -> Option<Oid> {
@@ -78,7 +106,6 @@ impl<'a> GitExplorer {
     }
 
     pub fn update_graph(mut self, stop_condition: Option<(Oid, String)>) {
-        self.stop_condition = stop_condition;
         self.run()
     }
 
@@ -318,10 +345,9 @@ impl<'a> GitExplorer {
             }
         }
 
-        let abort_next = match &self.stop_condition {
+        let stop_condition = self.stop_conditions.get(self.stop_condition_i).unwrap();
+        let abort_next = match stop_condition {
             Some(stop_condition) => {
-                // let reference = stop_condition.get();
-                // reference.peel_to_commit().unwrap().id() == commit_max.id()
                 stop_condition.0 == commit_max.id()
             }
             _ => false
