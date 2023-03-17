@@ -1,5 +1,8 @@
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
-use tui::text::Span;
+use tui::{
+    style::{Color, Style},
+    text::Span
+};
 use core::iter::Map;
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -96,8 +99,21 @@ impl<'a> GitExplorer {
         }
     }
 
-    pub fn branches_strings(&self) -> Vec<String> {
-        self.stop_conditions.iter().map(|sc| sc.clone().unwrap_or_else(|| { (Oid::zero(), String::from("None") )}).1).collect()
+    pub fn branches_strings(&self) -> Vec<Span> {
+        // TODO: Create new struct so this function returns Vec<NewBranchStruct>
+        self
+            .stop_conditions
+            .clone()
+            .into_iter()
+            .enumerate()
+            .map(|(i, sc)| {
+                let s = sc.unwrap_or_else(|| { (Oid::zero(), String::from(format!("{}/{} None, ", self.stop_condition_i, self.stop_conditions.len())) )}).1;
+                if i == self.stop_condition_i {
+                    Span::styled(s, Style::default().fg(Color::Yellow))
+                } else {
+                    Span::styled(s, Style::default().fg(Color::White))
+                }
+            }).collect::<Vec<Span>>()
     }
 
     pub fn get_nodes_len(&self) -> usize {
@@ -112,11 +128,19 @@ impl<'a> GitExplorer {
         }
     }
 
-    pub fn update_graph(&mut self) {
-        if self.stop_condition_i < (self.nodes_len - 1) {
-            self.stop_condition_i = self.stop_condition_i + 1
+    pub fn update_graph(&mut self, i: isize) {
+        if i > 0 {
+            if self.stop_condition_i < (self.stop_conditions.len() - 1) {
+                self.stop_condition_i = self.stop_condition_i + 1
+            } else {
+                self.stop_condition_i = 0
+            }
         } else {
-            self.stop_condition_i = 0
+            if self.stop_condition_i > 0 {
+                self.stop_condition_i = self.stop_condition_i - 1
+            } else {
+                self.stop_condition_i = self.stop_conditions.len() - 1;
+            }
         }
         self.run()
     }

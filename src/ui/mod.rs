@@ -200,8 +200,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 )
                 .split(chunks[1]);
 
-            let branches_strings: Vec<String> = git_explorer.branches_strings();
-            let text = Spans::from(branches_strings.iter().map(|b| Span::from(b.as_ref())).collect::<Vec<Span>>());
+            let text = Spans::from(git_explorer.branches_strings());
 
             let paragraph = Paragraph::new(text);
             rect.render_widget(paragraph, vertical_chunks[0]);
@@ -222,7 +221,12 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Tab => {
-                    git_explorer.update_graph();
+                    // TODO: Reset selected to zero to prevent bug when attempting to look at a
+                    // commit that there is not anymore
+                    git_explorer.update_graph(1);
+                }
+                KeyCode::BackTab => {
+                    git_explorer.update_graph(-1);
                 }
                 KeyCode::Char('q') => {
                     break;
