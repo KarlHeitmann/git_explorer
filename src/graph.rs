@@ -40,7 +40,10 @@ pub struct GitExplorer {
     path: Option<String>,
     repo: Repository,
     root_oid: Option<Oid>,
-    stop_condition: Option<(Oid, String)>
+    stop_condition: Option<(Oid, String)>,
+    pub nodes: Vec<GraphNode>,
+    is_updated: bool,
+    pub nodes_len: usize,
 }
 
 impl<'a> GitExplorer {
@@ -60,15 +63,28 @@ impl<'a> GitExplorer {
             repo,
             root_oid,
             path,
+            nodes: vec![],
+            is_updated: false,
+            nodes_len: 0,
         }
     }
 
-    pub fn update_graph(mut self, stop_condition: Option<(Oid, String)>) -> Vec<GraphNode> {
+    pub fn get_node_id(&self, i: usize) -> Option<Oid> {
+        // self.nodes.get(i).unwrap().id()
+        match self.nodes.get(i) {
+            Some(graph_node) => Some(graph_node.id()),
+            None => None,
+        }
+    }
+
+    pub fn update_graph(mut self, stop_condition: Option<(Oid, String)>) {
         self.stop_condition = stop_condition;
         self.run()
     }
 
-    pub fn diff_commit(&self, commit_1: Commit, commit_2: &Option<&GraphNode>) -> String {
+    // pub fn diff_commit(&self, commit_1: Commit, commit_2: &Option<&GraphNode>) -> String {
+    pub fn diff_commit(&self, commit_1: Commit, i_2: usize) -> String {
+        let commit_2 = self.get_node_id(i_2);
         let current_commit = commit_1;
 
         let mut detail = String::new();
@@ -89,8 +105,8 @@ impl<'a> GitExplorer {
         let mut string_b = String::new();
 
         match commit_2 {
-            Some(graph_node) => {
-                let sub_tree_oid_previous = graph_node.id();
+            Some(oid) => {
+                let sub_tree_oid_previous = oid;
                 let previous_commit = self.repo.find_commit(sub_tree_oid_previous).unwrap();
 
                 let my_first_diff = self.repo.diff_tree_to_tree(
@@ -162,14 +178,15 @@ impl<'a> GitExplorer {
         detail
     }
 
-    pub fn run(&self) -> Vec<GraphNode> {
-        match self.root_oid {
+    pub fn run(&mut self) {
+        let nodes = match self.root_oid {
             _ => {
                 let branches = self.repo.branches(Some(BranchType::Local)).unwrap();
                 self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), branches)
             }
-        }
-        
+        };
+        self.nodes_len = nodes.len();
+        self.nodes = nodes;
     }
 
     fn find_max_index(&self, times: Vec<Time>) -> usize {
