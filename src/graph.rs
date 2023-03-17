@@ -1,4 +1,7 @@
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
+use tui::text::Span;
+use core::iter::Map;
+
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use crate::utils::short_id;
@@ -44,7 +47,7 @@ pub struct GitExplorer {
     is_updated: bool,
     stop_condition_i: usize,
     stop_conditions: Vec<Option<(Oid, String)>>,
-    pub nodes_len: usize,
+    nodes_len: usize,
 }
 
 impl<'a> GitExplorer {
@@ -97,6 +100,10 @@ impl<'a> GitExplorer {
         self.stop_conditions.iter().map(|sc| sc.clone().unwrap_or_else(|| { (Oid::zero(), String::from("None") )}).1).collect()
     }
 
+    pub fn get_nodes_len(&self) -> usize {
+        self.nodes_len
+    }
+
     pub fn get_node_id(&self, i: usize) -> Option<Oid> {
         // self.nodes.get(i).unwrap().id()
         match self.nodes.get(i) {
@@ -105,7 +112,12 @@ impl<'a> GitExplorer {
         }
     }
 
-    pub fn update_graph(mut self, stop_condition: Option<(Oid, String)>) {
+    pub fn update_graph(&mut self) {
+        if self.stop_condition_i < (self.nodes_len - 1) {
+            self.stop_condition_i = self.stop_condition_i + 1
+        } else {
+            self.stop_condition_i = 0
+        }
         self.run()
     }
 

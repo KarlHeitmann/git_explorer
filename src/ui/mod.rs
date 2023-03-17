@@ -200,10 +200,9 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 )
                 .split(chunks[1]);
 
-
-            // let text = Text::from(branches_strings);
             let branches_strings: Vec<String> = git_explorer.branches_strings();
             let text = Spans::from(branches_strings.iter().map(|b| Span::from(b.as_ref())).collect::<Vec<Span>>());
+
             let paragraph = Paragraph::new(text);
             rect.render_widget(paragraph, vertical_chunks[0]);
 
@@ -223,6 +222,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Tab => {
+                    git_explorer.update_graph();
                 }
                 KeyCode::Char('q') => {
                     break;
@@ -241,7 +241,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Down => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.nodes_len;
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected >= amount_nodes - 1 {
                             node_list_state.select(Some(0));
                         } else {
@@ -258,7 +258,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::PageDown => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.nodes_len;
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected >= amount_nodes - 10 {
                             node_list_state.select(Some(0));
                         } else {
@@ -268,7 +268,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Up => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.nodes_len;
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected > 0 {
                             node_list_state.select(Some(selected - 1));
                         } else {
@@ -278,7 +278,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::PageUp => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.nodes_len;
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected > 10 {
                             node_list_state.select(Some(selected - 10));
                         } else {
