@@ -190,36 +190,21 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     // let (branches_strings, branches_ids) = match repo.head() {
     match repo.head() {
         Ok(head) => {
-            // let mut aux_strings: Vec<&str> = vec![];
-            // let mut aux_string = String::new();
-            // let mut aux_ids = vec![];
             for branch in repo.branches(Some(BranchType::Local)).unwrap() {
                 let b = branch.unwrap();
                 let b_string = b.0.get().shorthand().unwrap().to_string();
                 let head = head.shorthand().unwrap().to_string();
-                // if head == b { continue; }
-                // if head != b && head.contains(&b)  {
                 if head.contains(&b_string) || b_string.contains(&head) {
-                    // aux_strings.push(format!("{}, ", b_string));
-                    // aux_ids.push(b);
                     stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
                 }
             }
-            // (aux_strings, aux_ids)
         },
         Err(_) => {
-            // let mut aux_strings = vec![];
-            // let mut aux_strings: Vec<&str> = vec![];
-            // let mut aux_strings = String::new();
-            // let mut aux_ids = vec![];
             for branch in repo.branches(Some(BranchType::Local)).unwrap() {
                 let b = branch.unwrap();
                 let b_string = b.0.get().shorthand().unwrap().to_string();
-                // aux_strings.push(format!("{} ", b_string));
-                // aux_ids.push(b);
                 stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
             }
-            // (aux_strings, aux_ids)
         }
     };
     let stop_conditions = stop_conditions;
