@@ -1,10 +1,9 @@
 use crossterm::event::{self, Event, KeyCode};
-use std::io::Stdout;
-use git2::{Repository, Oid, Commit};
+use git2::{Repository, Oid};
 
 use crate::graph::GraphNode;
 use crate::{utils::short_id, graph::GitExplorer};
-use crate::ui::home::render_home;
+use crate::ui::home::wrapper;
 
 mod home;
 
@@ -12,7 +11,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    backend::CrosstermBackend,
+    backend::Backend,
     widgets::{
         Block, BorderType, Borders, ListState, Paragraph, Tabs
     },
@@ -131,7 +130,10 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
 }
 
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
+// fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+
+// pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repository, root_commit: Commit, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repository, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
@@ -145,34 +147,15 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
-            let chunks = get_layout_chunks(rect.size());
+            let mut chunks = get_layout_chunks(rect.size());
 
             let status_bar = draw_status_bar();
 
             let tabs = draw_menu_tabs(&menu_titles, active_menu_item);
 
             rect.render_widget(tabs, chunks[0]);
-            let vertical_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [Constraint::Length(3), Constraint::Min(5)].as_ref()
-                )
-                .split(chunks[1]);
 
-            let text = Spans::from(git_explorer.branches_strings());
-
-            let paragraph = Paragraph::new(text);
-            rect.render_widget(paragraph, vertical_chunks[0]);
-
-            let nodes_chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints(
-                    [Constraint::Percentage(percentage_left), Constraint::Percentage(percentage_right)].as_ref(),
-                )
-                .split(vertical_chunks[1]);
-            let (left, right) = render_home(&node_list_state, &repo, &git_explorer);
-            rect.render_stateful_widget(left, nodes_chunks[0], &mut node_list_state);
-            rect.render_widget(right, nodes_chunks[1]);
+            wrapper(rect, percentage_left, percentage_right, &mut node_list_state, &mut chunks, &git_explorer, repo);
 
             rect.render_widget(status_bar, chunks[2]);
         })?;
@@ -213,11 +196,14 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                     }
                 }
                 KeyCode::Enter => {
-                    let selected = node_list_state.selected().unwrap();
+                    // TODO: restore this feature: when hitting enter on a commit, spawns a nes
+                    // instance recursively with root commit the commit under cursor
+                    // let selected = node_list_state.selected().unwrap();
                     // let sub_tree_oid = data.get(selected).unwrap().id();
-                    let sub_tree_oid = git_explorer.get_node_id(selected).unwrap();
-                    let current_commit = repo.find_commit(sub_tree_oid).unwrap();
-                    explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
+                    // let sub_tree_oid = git_explorer.get_node_id(selected).unwrap();
+                    // let current_commit = repo.find_commit(sub_tree_oid).unwrap();
+                    // explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
+                    explorer_wrapper(terminal, repo, None)?; // TODO: Add stop condition on recursion
                 }
                 KeyCode::PageDown => {
                     if let Some(selected) = node_list_state.selected() {

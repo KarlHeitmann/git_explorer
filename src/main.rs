@@ -1,11 +1,17 @@
 #![feature(iter_collect_into)]
 #![feature(slice_partition_dedup)]
-// use git2::{Repository, BranchType};
-use git2::{ Repository, BranchType, Branch };
-use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
+
+use git2::{ Repository, BranchType };
+use crossterm::{
+    event::EnableMouseCapture,
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
+};
+
 
 use tui::{
     backend::CrosstermBackend,
+    // backend::{ CrosstermBackend, Backend },
     Terminal
 };
 
@@ -52,9 +58,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     enable_raw_mode().expect("can run in raw mode");
 
-    let stdout = io::stdout();
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
+
     terminal.clear()?;
 
     match stop_condition {
@@ -65,13 +73,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let reference = branch.get();
                     let oid = reference.target().unwrap();
                     let shorthand = reference.shorthand().unwrap();
-                    ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap(), Some((oid, shorthand.to_string())))?
+                    ui::explorer_wrapper(&mut terminal, &repo, Some((oid, shorthand.to_string())))?
                 },
-                _ => ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap(), None)?,
+                _ => ui::explorer_wrapper(&mut terminal, &repo, None)?,
             };
             
         }
-        None => ui::explorer_wrapper(&mut terminal, &repo, repo.head().unwrap().peel_to_commit().unwrap(), None)?
+        None => ui::explorer_wrapper(&mut terminal, &repo, None)?
     }
 
     disable_raw_mode()?;
