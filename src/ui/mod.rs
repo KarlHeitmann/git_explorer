@@ -1,9 +1,9 @@
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Stdout;
-use git2::{Repository, Oid, Commit, BranchType};
+use git2::{Repository, Branch, Oid, Commit, BranchType};
 
-use crate::utils::short_id;
-use crate::graph::paint_commit_track;
+use crate::graph::GraphNode;
+use crate::{utils::short_id, graph::GitExplorer};
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -17,6 +17,42 @@ use tui::{
     Terminal
 };
 
+impl From<&GraphNode> for Spans<'_> {
+    fn from(graph_node: &GraphNode) -> Self {
+        let (grapheme, oid, branch_shorthand, summary) = (&graph_node.grapheme, graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
+        let branch_shorthand = match branch_shorthand {
+            Some(b) => format!("[{}] ", b.to_string()),
+            None => String::new()
+        };
+        Spans::from(
+            {
+                match grapheme.split_once("\n") {
+                    Some((g1, g_right)) => format!("{} ({}) {}{}\n{}", g1, short_id(oid), branch_shorthand, summary, g_right),
+                    None => format!("{} ({}) {}{}", grapheme, short_id(oid), branch_shorthand, summary),
+                }
+            }
+        )
+    }
+}
+ 
+impl From<&GraphNode> for Text<'_> {
+    fn from(graph_node: &GraphNode) -> Self {
+        let (grapheme, oid, branch_shorthand, summary) = (&graph_node.grapheme, graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
+        let branch_shorthand = match branch_shorthand {
+            Some(b) => format!("[{}] ", b.to_string()),
+            None => String::new()
+        };
+        Text::from(
+            {
+                match grapheme.split_once("\n") {
+                    Some((g1, g_right)) => format!("{} ({}) {}{}\n{}", g1, short_id(oid), branch_shorthand, summary, g_right),
+                    None => format!("{} ({}) {}{}", grapheme, short_id(oid), branch_shorthand, summary),
+                }
+            }
+        )
+    }
+}
+ 
 #[derive(Copy, Clone, Debug)]
 pub enum MenuItem {
     Home,
@@ -91,7 +127,7 @@ pub fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuI
         .divider(Span::raw("|"))
 }
 
-pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, Option<String>)>, repo: &Repository) -> (List<'a>, Paragraph<'a>) {
+pub fn render_home<'a>(node_list_state: &ListState, repo: &Repository, git_explorer: &GitExplorer) -> (List<'a>, Paragraph<'a>) {
     let style_list = Style::default().fg(Color::White);
     let nodes_block:Block = Block::default()
         .borders(Borders::ALL)
@@ -99,29 +135,12 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
         .title(format!("Graph"))
         .border_type(BorderType::Plain);
 
-    let items: Vec<ListItem> = data
+    let items: Vec<ListItem> = git_explorer.nodes
         .iter()
         .map(|node| {
-            let grapheme = &node.0;
-            let commit = repo.find_commit(node.1).unwrap();
-
-            if short_id(commit.id()) == String::from("82b9fa2") {
-                let a = 1 + 1;
-            }
-
-            let b = node.2.clone();
-            let b = match b {
-                Some(b) => format!("[{}]", b),
-                None => String::new(),
-            };
-            let text = format!(
-                "{} ({}) {} {} ",
-                grapheme.clone(),
-                short_id(commit.id()),
-                b,
-                commit.summary().unwrap()
-            );
-            let text = Text::from(text);
+            // let text = Text::from(node.clone());
+            let text = Text::from(node);
+            // let text = Spans::from(node);
             let l = ListItem::new(text);
             l
         })
@@ -136,98 +155,13 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
 
     let i = node_list_state.selected().expect("there is always a selected node");
 
-    let sub_tree_oid = data.get(i).unwrap().1;
+    // let sub_tree_oid = data.get(i).unwrap().id();
+    let sub_tree_oid = git_explorer.get_node_id(i).unwrap();
 
-    let mut detail = String::new();
     let current_commit = repo.find_commit(sub_tree_oid).unwrap();
 
-    let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
-
-    detail.push_str(
-        &format!("\n{}\nCommiter: {}\nAuthor: {}\n{}\nPARENTS:\n{}\n\n",
-            current_commit.message().unwrap_or("NO COMMIT MESSAGE"),
-            current_commit.committer().to_string(),
-            current_commit.author(),
-            short_id(current_commit.id()),
-            parents,
-        )
-    );
-
-    let mut string_0 = String::from("FD\n");
-    let mut string_a = String::new();
-    let mut string_b = String::new();
-
-    match data.get(i+1) {
-        Some((_, sub_tree_oid_previous, _)) => {
-            let previous_commit = repo.find_commit(*sub_tree_oid_previous).unwrap();
-
-            let my_first_diff = repo.diff_tree_to_tree(
-                previous_commit.tree().ok().as_ref(),
-                current_commit.tree().ok().as_ref(),
-                None
-            ).unwrap();
-
-            let _foreach_result = my_first_diff.foreach(
-                &mut |delta, _| {
-                    let old_file = delta.old_file();
-                    let old_file = old_file.path().unwrap();
-                    let new_file = delta.new_file();
-                    let new_file = new_file.path().unwrap();
-                    string_0.push_str(&format!("{:?} - {:?}\n", old_file, new_file));
-                    true
-                },
-                None,
-                Some(&mut |_, _hunk| {
-                    /*
-                    let s = format!("{}\n",
-                        String::from_utf8(hunk.header().to_vec()).unwrap()
-                    );
-                    string_a.push_str(&s);
-                    */
-                    // string_a = String::from_utf8(hunk.header().to_vec()).unwrap();
-                    true
-                }),
-                Some(&mut |_, hunk, line| {
-                    match hunk {
-                        Some(hunk) => {
-                            let hunk = String::from_utf8(hunk.header().to_vec()).unwrap();
-                            if string_a == hunk {
-                                let s = format!("{}:{}{}",
-                                    line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                                    line.origin().to_string(),
-                                    String::from_utf8(line.content().to_vec()).unwrap()
-                                );
-                                string_b.push_str(&s);
-                            } else {
-                                let s = format!("{}{}:{}{}",
-                                    hunk,
-                                    line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                                    line.origin().to_string(),
-                                    String::from_utf8(line.content().to_vec()).unwrap()
-                                );
-                                string_b.push_str(&s);
-                            }
-                            string_a = hunk;
-                        }
-                        None => {
-                            let s = format!("{}:{}{}",
-                                line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                                line.origin().to_string(),
-                                String::from_utf8(line.content().to_vec()).unwrap()
-                            );
-                            string_b.push_str(&s);
-                        }
-                    }
-                    true
-                }),
-            );
-        },
-        None => {}
-    }
-
-    detail.push_str(&string_0);
-    detail.push_str(&string_a);
-    detail.push_str(&string_b);
+    // let detail = git_explorer.diff_commit(current_commit, &data.get(i+1));
+    let detail = git_explorer.diff_commit(current_commit, i+1);
 
     let node_detail = Paragraph::new(detail)
         .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
@@ -238,12 +172,12 @@ pub fn render_home<'a>(node_list_state: &ListState, data: &'a Vec<(String, Oid, 
     (list, node_detail)
 }
 
-pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo: &Repository, root_commit: Commit, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
     let mut node_list_state = ListState::default();
-    let branches = repo.branches(Some(BranchType::Local)).unwrap();
-    let data = paint_commit_track(root_commit, branches);
+    let mut git_explorer = GitExplorer::new(None, None, stop_condition.clone()); // TARGET
+    git_explorer.run();
     node_list_state.select(Some(0));
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);
@@ -259,13 +193,25 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
             let tabs = draw_menu_tabs(&menu_titles, active_menu_item);
 
             rect.render_widget(tabs, chunks[0]);
+            let vertical_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [Constraint::Length(3), Constraint::Min(5)].as_ref()
+                )
+                .split(chunks[1]);
+
+            let text = Spans::from(git_explorer.branches_strings());
+
+            let paragraph = Paragraph::new(text);
+            rect.render_widget(paragraph, vertical_chunks[0]);
+
             let nodes_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(
                     [Constraint::Percentage(percentage_left), Constraint::Percentage(percentage_right)].as_ref(),
                 )
-                .split(chunks[1]);
-            let (left, right) = render_home(&node_list_state, &data, &repo);
+                .split(vertical_chunks[1]);
+            let (left, right) = render_home(&node_list_state, &repo, &git_explorer);
             rect.render_stateful_widget(left, nodes_chunks[0], &mut node_list_state);
             rect.render_widget(right, nodes_chunks[1]);
 
@@ -274,6 +220,14 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
 
         if let Event::Key(key) = event::read()? {
             match key.code {
+                KeyCode::Tab => {
+                    // TODO: Reset selected to zero to prevent bug when attempting to look at a
+                    // commit that there is not anymore
+                    git_explorer.update_graph(1);
+                }
+                KeyCode::BackTab => {
+                    git_explorer.update_graph(-1);
+                }
                 KeyCode::Char('q') => {
                     break;
                 }
@@ -291,7 +245,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Down => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = data.len();
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected >= amount_nodes - 1 {
                             node_list_state.select(Some(0));
                         } else {
@@ -301,13 +255,14 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Enter => {
                     let selected = node_list_state.selected().unwrap();
-                    let sub_tree_oid = data.get(selected).unwrap().1;
+                    // let sub_tree_oid = data.get(selected).unwrap().id();
+                    let sub_tree_oid = git_explorer.get_node_id(selected).unwrap();
                     let current_commit = repo.find_commit(sub_tree_oid).unwrap();
-                    explorer_wrapper(terminal, repo, current_commit)?;
+                    explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
                 }
                 KeyCode::PageDown => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = data.len();
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected >= amount_nodes - 10 {
                             node_list_state.select(Some(0));
                         } else {
@@ -317,7 +272,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::Up => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = data.len();
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected > 0 {
                             node_list_state.select(Some(selected - 1));
                         } else {
@@ -327,7 +282,7 @@ pub fn explorer_wrapper(terminal: &mut Terminal<CrosstermBackend<Stdout>>, repo:
                 }
                 KeyCode::PageUp => {
                     if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = data.len();
+                        let amount_nodes = git_explorer.get_nodes_len();
                         if selected > 10 {
                             node_list_state.select(Some(selected - 10));
                         } else {
