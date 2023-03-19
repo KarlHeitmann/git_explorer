@@ -8,7 +8,9 @@ use tui::{
     backend::Backend,
 };
 
-struct BranchesComponent {
+use crate::ui::Component;
+
+pub struct BranchesComponent {
     paragraph_title: String,
 }
 
@@ -20,18 +22,25 @@ impl BranchesComponent {
             paragraph_title,
         }
     }
+
+    pub fn render<B: Backend>(
+        &self,
+        f: &mut Frame<B>,
+        // chunks: &mut Vec<Rect>,
+        // rect: &mut Rect,
+        rect: Rect,
+        ) {
+        let p = Paragraph::new("Branches")
+            .block(Block::default().title(format!("Commit COMPLETE")).borders(Borders::ALL))
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+
+        f.render_widget(p, rect);
+
+    }
 }
 
-pub fn render_branches<B: Backend>(
-    f: &mut Frame<B>,
-    chunks: &mut Vec<Rect>,
-    ) {
-    let p = Paragraph::new("Branches")
-        .block(Block::default().title(format!("Commit COMPLETE")).borders(Borders::ALL))
-        .style(Style::default().fg(Color::White).bg(Color::Black))
-        .alignment(Alignment::Left)
-        .wrap(Wrap { trim: true });
-
-    f.render_widget(p, chunks[1]);
-
+impl Component for BranchesComponent {
 }
+

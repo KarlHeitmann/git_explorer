@@ -1,5 +1,6 @@
 use git2::{Repository, Oid};
 
+use crate::ui::app::App;
 use crate::graph::GraphNode;
 use crate::{utils::short_id, graph::GitExplorer};
 
@@ -78,102 +79,55 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);
     terminal.clear()?;
-    app::app(terminal, &mut node_list_state, &mut git_explorer, repo);
-    /*
-    terminal.draw(|rect| {
-        app::app(rect, &mut node_list_state, &mut git_explorer, repo);
-    })?;
-    */
-        /*
-    loop {
-        terminal.draw(|rect| {
-            app::app(rect, &mut node_list_state, &git_explorer, repo, percentage_left, percentage_right, tab_index);
-        })?;
+    let mut app = app::App::new();
+    app.run(terminal, &mut git_explorer, repo)?;
+    // app::app(terminal, &mut node_list_state, &mut git_explorer, repo);
 
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Tab => {
-                    // TODO: Reset selected to zero to prevent bug when attempting to look at a
-                    // commit that there is not anymore
-                    git_explorer.update_graph(1);
-                }
-                KeyCode::BackTab => {
-                    git_explorer.update_graph(-1);
-                }
-                KeyCode::Char('1') => {tab_index = 0}
-                KeyCode::Char('2') => {tab_index = 1}
-                KeyCode::Char('q') => {
-                    break;
-                }
-                KeyCode::Left => {
-                    if percentage_left > 0 {
-                        percentage_left -= 1;
-                        percentage_right += 1;
-                    }
-                }
-                KeyCode::Right => {
-                    if percentage_right > 0 {
-                        percentage_left += 1;
-                        percentage_right -= 1;
-                    }
-                }
-                KeyCode::Down => {
-                    if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.get_nodes_len();
-                        if selected >= amount_nodes - 1 {
-                            node_list_state.select(Some(0));
-                        } else {
-                            node_list_state.select(Some(selected + 1));
-                        }
-                    }
-                }
-                KeyCode::Enter => {
-                    // TODO: restore this feature: when hitting enter on a commit, spawns a nes
-                    // instance recursively with root commit the commit under cursor
-                    // let selected = node_list_state.selected().unwrap();
-                    // let sub_tree_oid = data.get(selected).unwrap().id();
-                    // let sub_tree_oid = git_explorer.get_node_id(selected).unwrap();
-                    // let current_commit = repo.find_commit(sub_tree_oid).unwrap();
-                    // explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
-                    explorer_wrapper(terminal, repo, None)?; // TODO: Add stop condition on recursion
-                }
-                KeyCode::PageDown => {
-                    if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.get_nodes_len();
-                        if selected >= amount_nodes - 10 {
-                            node_list_state.select(Some(0));
-                        } else {
-                            node_list_state.select(Some(selected + 10));
-                        }
-                    }
-                }
-                KeyCode::Up => {
-                    if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.get_nodes_len();
-                        if selected > 0 {
-                            node_list_state.select(Some(selected - 1));
-                        } else {
-                            node_list_state.select(Some(amount_nodes - 1));
-                        }
-                    }
-                }
-                KeyCode::PageUp => {
-                    if let Some(selected) = node_list_state.selected() {
-                        let amount_nodes = git_explorer.get_nodes_len();
-                        if selected > 10 {
-                            node_list_state.select(Some(selected - 10));
-                        } else {
-                            node_list_state.select(Some(amount_nodes - 1));
-                        }
-                    }
-                }
-                _ => {}
-            }
-
-        }
-    }
-        */
 
     Ok(())
 }
+
+pub trait Component {
+}
+/*
+pub trait Component {
+	///
+	fn commands(
+		&self,
+		out: &mut Vec<CommandInfo>,
+		force_all: bool,
+	) -> CommandBlocking;
+
+	///
+	fn event(&mut self, ev: &Event) -> Result<EventState>;
+
+	///
+	fn focused(&self) -> bool {
+		false
+	}
+	/// focus/unfocus this component depending on param
+	fn focus(&mut self, _focus: bool) {}
+	///
+	fn is_visible(&self) -> bool {
+		true
+	}
+	///
+	fn hide(&mut self) {}
+	///
+	fn show(&mut self) -> Result<()> {
+		Ok(())
+	}
+
+	///
+	fn toggle_visible(&mut self) -> Result<()> {
+		if self.is_visible() {
+			self.hide();
+			Ok(())
+		} else {
+			self.show()
+		}
+	}
+}
+*/
+
 
