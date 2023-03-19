@@ -1,4 +1,3 @@
-use crossterm::event::{self, Event, KeyCode};
 use git2::{Repository, Oid};
 
 use crate::graph::GraphNode;
@@ -78,10 +77,14 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
     node_list_state.select(Some(0));
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);
-    let (mut percentage_left, mut percentage_right) = (50, 50);
-    let mut tab_index = 0;
-
     terminal.clear()?;
+    app::app(terminal, &mut node_list_state, &mut git_explorer, repo);
+    /*
+    terminal.draw(|rect| {
+        app::app(rect, &mut node_list_state, &mut git_explorer, repo);
+    })?;
+    */
+        /*
     loop {
         terminal.draw(|rect| {
             app::app(rect, &mut node_list_state, &git_explorer, repo, percentage_left, percentage_right, tab_index);
@@ -169,6 +172,7 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
 
         }
     }
+        */
 
     Ok(())
 }
