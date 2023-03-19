@@ -10,10 +10,24 @@ mod branches;
 
 use tui::{
     text::{Spans, Text},
+    layout::Rect,
     backend::Backend,
+    terminal::Frame,
     widgets::ListState,
     Terminal
 };
+
+pub trait DrawableComponent {
+	///
+	fn draw<B: Backend>(
+		&self,
+		f: &mut Frame<B>,
+		rect: Rect,
+	);
+	// ) -> Result<()>; // TODO implement some Result
+}
+
+
 
 impl From<&GraphNode> for Spans<'_> {
     fn from(graph_node: &GraphNode) -> Self {

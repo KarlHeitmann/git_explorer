@@ -8,6 +8,20 @@ use tui::{
     backend::Backend,
 };
 
+struct BranchesComponent {
+    paragraph_title: String,
+}
+
+impl BranchesComponent {
+    // pub const fn new() -> Self {
+    pub fn new() -> Self {
+        let paragraph_title = String::from("Branches title");
+        Self {
+            paragraph_title,
+        }
+    }
+}
+
 pub fn render_branches<B: Backend>(
     f: &mut Frame<B>,
     chunks: &mut Vec<Rect>,
