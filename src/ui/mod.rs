@@ -6,6 +6,7 @@ use crate::{utils::short_id, graph::GitExplorer};
 
 mod home;
 mod app;
+mod branches;
 
 use tui::{
     text::{Spans, Text},
@@ -64,11 +65,12 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
 
     // let (mut percentage_left, mut percentage_right) = (60, 40);
     let (mut percentage_left, mut percentage_right) = (50, 50);
+    let mut tab_index = 0;
 
     terminal.clear()?;
     loop {
         terminal.draw(|rect| {
-            app::app(rect, &mut node_list_state, &git_explorer, repo, percentage_left, percentage_right);
+            app::app(rect, &mut node_list_state, &git_explorer, repo, percentage_left, percentage_right, tab_index);
         })?;
 
         if let Event::Key(key) = event::read()? {
@@ -81,6 +83,8 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
                 KeyCode::BackTab => {
                     git_explorer.update_graph(-1);
                 }
+                KeyCode::Char('1') => {tab_index = 0}
+                KeyCode::Char('2') => {tab_index = 1}
                 KeyCode::Char('q') => {
                     break;
                 }

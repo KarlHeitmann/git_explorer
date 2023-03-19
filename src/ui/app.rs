@@ -14,6 +14,8 @@ use tui::{
 use crate::graph::GitExplorer;
 use crate::ui::home::wrapper;
 
+use super::branches::render_branches;
+
 #[derive(Copy, Clone, Debug)]
 pub enum MenuItem {
     Home,
@@ -93,7 +95,8 @@ pub fn app<B: Backend>(
     node_list_state: &mut ListState,
     git_explorer: &GitExplorer,
     repo: &Repository,
-    percentage_left: u16, percentage_right: u16) {
+    percentage_left: u16, percentage_right: u16,
+    tab_index: usize,) {
     let menu_titles = vec!["Home", "Quit"];
     let active_menu_item = MenuItem::Home;
 
@@ -105,7 +108,13 @@ pub fn app<B: Backend>(
 
     f.render_widget(tabs, chunks[0]);
 
-    wrapper(f, percentage_left, percentage_right, node_list_state, &mut chunks, &git_explorer, repo);
+    match tab_index {
+        0 => wrapper(f, percentage_left, percentage_right, node_list_state, &mut chunks, &git_explorer, repo),
+        1 => render_branches(f, &mut chunks),
+        _ => {},
+    }
+    // wrapper(f, percentage_left, percentage_right, node_list_state, &mut chunks, &git_explorer, repo);
+    // render_branches(f, &mut chunks);
 
     f.render_widget(status_bar, chunks[2]);
 
