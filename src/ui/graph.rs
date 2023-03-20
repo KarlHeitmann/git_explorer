@@ -118,7 +118,8 @@ impl GraphComponent {
         }
     }
 
-    pub fn render_home<'a>(&self, repo: &Repository, git_explorer: &GitExplorer) -> (List<'a>, Paragraph<'a>) {
+    pub fn render_home<'a>(&self, repo: &Repository, git_explorer: &'a GitExplorer) -> (List<'a>, Paragraph<'a>) {
+    // pub fn render_home<'a>(&self, repo: &Repository, git_explorer: &'a GitExplorer) -> (List<'a>, Text<'a>) {
         let style_list = Style::default().fg(Color::White);
         let nodes_block:Block = Block::default()
             .borders(Borders::ALL)
@@ -154,13 +155,20 @@ impl GraphComponent {
         // let detail = git_explorer.diff_commit(current_commit, &data.get(i+1));
         let detail = git_explorer.diff_commit(current_commit, i+1);
 
-        let node_detail = Paragraph::new(detail.detail)
+        // let asd = Paragraph::new(detail.test_lines);
+
+        // let node_detail = Paragraph::new("asd")
+        // let node_detail = Text::new(detail.test_lines.clone())
+        // let node_detail = Text::new(detail.test_lines.clone())
+        let node_detail = Paragraph::new(detail.test_lines)
             .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
             .style(Style::default().fg(Color::White).bg(Color::Black))
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: true });
+        // let node_detail = detail.test_lines.clone();
 
         (list, node_detail)
+        // (list, detail.test_lines)
     }
 
     pub fn render<B: Backend>(
