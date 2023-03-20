@@ -56,9 +56,9 @@ pub struct ParsedDiff<'a> {
     commit_1_oid: Oid,
     commit_2_oid: Option<Oid>,
     // pub test_lines: Vec<Text<'a>>,
-    // pub test_lines: Vec<Spans<'a>>,
+    pub test_lines: Vec<Spans<'a>>,
     // pub test_lines: Vec<Text<'a>>,
-    pub test_lines: Text<'a>,
+    // pub test_lines: Text<'a>,
     // pub test_lines: Vec<Paragraph<'a>>,
     pub detail: String,
 }
@@ -209,8 +209,8 @@ impl ParsedDiff<'_> {
             },
             None => {}
         }
-        let t = Text::from(diff_spans);
-        test_lines = t;
+        // let t = Text::from(diff_spans);
+        test_lines = diff_spans;
         detail.push_str(&string_0);
         detail.push_str(&string_a);
         detail.push_str(&string_b);

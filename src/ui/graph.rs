@@ -19,7 +19,7 @@ pub struct GraphComponent {
     node_list_state: ListState,
     percentage_left: u16,
     percentage_right: u16,
-
+    diff_offset: usize,
 }
 
 impl Component for GraphComponent {
@@ -51,6 +51,15 @@ impl Component for GraphComponent {
                     self.percentage_right -= 1;
                 }
             }
+            KeyCode::Char('j') => {
+                // TODO: protect increment of diff_offset to not overflow diff lines in git_explorer.diff_commit() -> ParsedDiff
+                self.diff_offset += 1;
+            }
+            KeyCode::Char('k') => {
+                if self.diff_offset > 0 {
+                    self.diff_offset -= 1;
+                }
+            }
             KeyCode::Down => {
                 if let Some(selected) = self.node_list_state.selected() {
                     let amount_nodes = git_explorer.get_nodes_len();
@@ -59,6 +68,7 @@ impl Component for GraphComponent {
                     } else {
                         self.node_list_state.select(Some(selected + 1));
                     }
+                    self.diff_offset = 0;
                 }
             }
             KeyCode::Enter => {
@@ -79,6 +89,7 @@ impl Component for GraphComponent {
                     } else {
                         self.node_list_state.select(Some(selected + 10));
                     }
+                    self.diff_offset = 0;
                 }
             }
             KeyCode::Up => {
@@ -89,6 +100,7 @@ impl Component for GraphComponent {
                     } else {
                         self.node_list_state.select(Some(amount_nodes - 1));
                     }
+                    self.diff_offset = 0;
                 }
             }
             KeyCode::PageUp => {
@@ -99,6 +111,7 @@ impl Component for GraphComponent {
                     } else {
                         self.node_list_state.select(Some(amount_nodes - 1));
                     }
+                    self.diff_offset = 0;
                 }
             }
             _ => {}
@@ -115,6 +128,7 @@ impl GraphComponent {
         Self {
             node_list_state,
             percentage_left, percentage_right,
+            diff_offset: 0,
         }
     }
 
@@ -160,7 +174,14 @@ impl GraphComponent {
         // let node_detail = Paragraph::new("asd")
         // let node_detail = Text::new(detail.test_lines.clone())
         // let node_detail = Text::new(detail.test_lines.clone())
-        let node_detail = Paragraph::new(detail.test_lines)
+        // let spans_to_build = &detail.test_lines[self.diff_offset..];
+
+        // let spans_to_build = detail.test_lines;
+        // let spans_to_build = &detail.test_lines[0..].to_owned();
+        let spans_to_build = &detail.test_lines[self.diff_offset..].to_owned();
+
+        // let node_detail = Paragraph::new(spans_to_build.clone())
+        let node_detail = Paragraph::new(spans_to_build.clone())
             .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
             .style(Style::default().fg(Color::White).bg(Color::Black))
             .alignment(Alignment::Left)
