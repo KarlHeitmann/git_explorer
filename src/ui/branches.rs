@@ -1,5 +1,7 @@
+use git2::Repository;
 use tui::{
     layout::{Alignment, Rect},
+    text::Spans,
     style::{Color, Style},
     terminal::Frame,
     widgets::{
@@ -9,8 +11,8 @@ use tui::{
 };
 
 use crate::ui::Component;
-use crate::graph::GitExplorer;
 // use crossterm::event::Event;
+use crate::graph::GitExplorer;
 use crossterm::event::{self, Event, KeyCode};
 
 pub struct BranchesComponent {
@@ -32,8 +34,10 @@ impl BranchesComponent {
         // chunks: &mut Vec<Rect>,
         // rect: &mut Rect,
         rect: Rect,
+        git_explorer: &GitExplorer
         ) {
-        let p = Paragraph::new("Branches")
+        let text = Spans::from(git_explorer.branches_strings());
+        let p = Paragraph::new(text)
             .block(Block::default().title(format!("Commit COMPLETE")).borders(Borders::ALL))
             .style(Style::default().fg(Color::White).bg(Color::Black))
             .alignment(Alignment::Left)
@@ -45,6 +49,19 @@ impl BranchesComponent {
 }
 
 impl Component for BranchesComponent {
-	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> { Ok(String::from("ok")) }
+	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
+        match key_code {
+            KeyCode::Tab => {
+                // TODO: Reset selected to zero to prevent bug when attempting to look at a
+                // commit that there is not anymore
+                git_explorer.update_graph(1);
+            }
+            KeyCode::BackTab => {
+                git_explorer.update_graph(-1);
+            }
+            _ => {}
+        }
+        Ok(String::from("ok"))
+    }
 }
 
