@@ -154,7 +154,7 @@ impl GraphComponent {
         // let detail = git_explorer.diff_commit(current_commit, &data.get(i+1));
         let detail = git_explorer.diff_commit(current_commit, i+1);
 
-        let node_detail = Paragraph::new(detail)
+        let node_detail = Paragraph::new(detail.detail)
             .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
             .style(Style::default().fg(Color::White).bg(Color::Black))
             .alignment(Alignment::Left)
