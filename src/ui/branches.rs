@@ -9,6 +9,9 @@ use tui::{
 };
 
 use crate::ui::Component;
+use crate::graph::GitExplorer;
+// use crossterm::event::Event;
+use crossterm::event::{self, Event, KeyCode};
 
 pub struct BranchesComponent {
     paragraph_title: String,
@@ -42,5 +45,6 @@ impl BranchesComponent {
 }
 
 impl Component for BranchesComponent {
+	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> { Ok(String::from("ok")) }
 }
 
