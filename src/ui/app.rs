@@ -138,7 +138,7 @@ impl App {
                 match tab_index {
                     // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
                     // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
-                    0 => self.graph_component.render(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
+                    0 => self.graph_component.render(f, percentage_left, percentage_right, &mut chunks, &git_explorer, repo),
                     // 1 => render_branches(f, &mut chunks),
                     1 => self.branches_component.render(f, chunks[1]),
                     _ => {},
