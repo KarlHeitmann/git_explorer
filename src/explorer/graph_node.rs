@@ -1,4 +1,4 @@
-use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
+use git2::Oid;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use crate::utils::short_id;
 
