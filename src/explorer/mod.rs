@@ -96,11 +96,16 @@ impl<'a> GitExplorer {
                     Some(sc) => sc.shorthand().clone(),
                     None => String::from(format!("{}/{} None", self.stop_condition_i + 1, self.stop_conditions.len())),
                 };
-                if i == self.stop_condition_i {
-                    Span::styled(format!("{} ", s), Style::default().fg(Color::Yellow))
-                } else {
-                    Span::styled(format!("{} ", s), Style::default().fg(Color::White))
-                }
+
+                let style = Style::default().fg(
+                    if i == self.stop_condition_i {
+                        Color::White
+                    } else {
+                        Color::Yellow
+                    }
+                );
+
+                Span::styled(format!("{} ", s), style)
             }).collect::<Vec<Span>>()
     }
 
