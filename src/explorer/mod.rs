@@ -1,7 +1,9 @@
+#![allow(unused)]  // FIXME
+
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
 use tui::{
     style::{Color, Style},
-    text::{Span, Spans}, widgets::Paragraph,
+    text::{Span, Spans},
 };
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -69,7 +71,7 @@ impl ParsedDiff<'_> {
         let commit_2_oid = commit_2;
         let current_commit = commit_1;
         // let mut test_lines = vec![];
-        let mut test_lines;
+        let test_lines;
 
         let mut detail = String::new();
         let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");

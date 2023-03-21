@@ -2,11 +2,7 @@
 #![feature(slice_partition_dedup)]
 
 use git2::{ Repository, BranchType };
-use crossterm::{
-    event::EnableMouseCapture,
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
-};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
 
 use tui::{
@@ -58,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     enable_raw_mode().expect("can run in raw mode");
 
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
     // execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;

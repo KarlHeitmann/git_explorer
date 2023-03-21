@@ -1,5 +1,5 @@
 use git2::Repository;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::KeyCode;
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
