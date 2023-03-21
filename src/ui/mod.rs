@@ -3,8 +3,10 @@ use git2::{Repository, Oid};
 // use crossterm::event::Event;
 use crossterm::event::{self, Event, KeyCode};
 use crate::ui::app::App;
-use crate::graph::GraphNode;
-use crate::{utils::short_id, graph::GitExplorer};
+// use crate::graph::GraphNode;
+// use crate::{utils::short_id, graph::GitExplorer};
+use crate::explorer::{GitExplorer, GraphNode};
+use crate::utils::short_id;
 
 mod graph;
 mod app;

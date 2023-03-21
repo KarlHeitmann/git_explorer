@@ -12,7 +12,7 @@ use tui::{
     backend::Backend,
 };
 
-use crate::graph::GitExplorer;
+use crate::explorer::GitExplorer;
 use crate::ui::Component;
 
 pub struct GraphComponent {

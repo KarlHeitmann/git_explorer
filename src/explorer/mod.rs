@@ -1,7 +1,7 @@
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
 use tui::{
     style::{Color, Style},
-    text::{Span, Text, Spans}, widgets::Paragraph,
+    text::{Span, Spans}, widgets::Paragraph,
 };
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -513,4 +513,5 @@ impl<'a> GitExplorer {
     }
 
 }
+
 

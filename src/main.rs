@@ -20,7 +20,7 @@ use std::env;
 
 mod ui;
 mod utils;
-mod graph;
+mod explorer;
 
     /*
 fn test_info(repo: &Repository) {

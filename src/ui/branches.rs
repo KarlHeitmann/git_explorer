@@ -12,7 +12,7 @@ use tui::{
 
 use crate::ui::Component;
 // use crossterm::event::Event;
-use crate::graph::GitExplorer;
+use crate::explorer::GitExplorer;
 use crossterm::event::{self, Event, KeyCode};
 
 pub struct BranchesComponent {

@@ -15,7 +15,7 @@ use tui::{
 
 use crate::ui::Component;
 use crate::ui::branches::BranchesComponent;
-use crate::graph::GitExplorer;
+use crate::explorer::GitExplorer;
 use crate::ui::graph::GraphComponent;
 
 #[derive(Copy, Clone, Debug)]
