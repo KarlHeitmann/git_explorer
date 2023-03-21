@@ -1,6 +1,7 @@
 #![feature(iter_collect_into)]
 #![feature(slice_partition_dedup)]
 
+use explorer::branch_data::BranchData;
 use git2::{ Repository, BranchType };
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
@@ -65,12 +66,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(stop_condition) => {
             let mut branches = repo.branches(Some(BranchType::Local)).unwrap();
             match branches.find(|b| b.as_ref().unwrap().0.get().shorthand().unwrap().to_string().contains(stop_condition)) {
-                Some(Ok((branch, _))) => {
-                    let reference = branch.get();
-                    let oid = reference.target().unwrap();
-                    let shorthand = reference.shorthand().unwrap();
-                    ui::explorer_wrapper(&mut terminal, &repo, Some((oid, shorthand.to_string())))?
-                },
+                Some(branch) => {
+                    let branch_data = BranchData::new(branch);
+                    ui::explorer_wrapper(&mut terminal, &repo, Some(branch_data))?
+                }
                 _ => ui::explorer_wrapper(&mut terminal, &repo, None)?,
             };
             

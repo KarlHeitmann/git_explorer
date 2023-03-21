@@ -10,8 +10,11 @@ use crate::utils::short_id;
 use crate::explorer::graph_node::GraphNode;
 use crate::explorer::parsed_diff::ParsedDiff;
 
+use self::branch_data::BranchData;
+
 pub mod graph_node;
 pub mod parsed_diff;
+pub mod branch_data;
 
 #[derive(PartialEq)]
 enum Status {
@@ -27,12 +30,12 @@ pub struct GitExplorer {
     pub nodes: Vec<GraphNode>,
     is_updated: bool,
     stop_condition_i: usize,
-    stop_conditions: Vec<Option<(Oid, String)>>,
+    stop_conditions: Vec<Option<BranchData>>,
     nodes_len: usize,
 }
 
 impl<'a> GitExplorer {
-    pub fn new(path: Option<String>, root_oid: Option<Oid>, stop_condition: Option<(Oid, String)>) -> Self {
+    pub fn new(path: Option<String>, root_oid: Option<Oid>, stop_condition: Option<BranchData>) -> Self {
 
         let repo = match path {
             _ => {
@@ -43,24 +46,27 @@ impl<'a> GitExplorer {
             }
         };
 
-        let mut stop_conditions = vec![stop_condition];
+        let mut stop_conditions: Vec<Option<BranchData>> = vec![stop_condition];
 
         match repo.head() {
             Ok(head) => {
                 for branch in repo.branches(Some(BranchType::Local)).unwrap() {
+                    let branch_data = BranchData::new(branch);
+                    /*
                     let b = branch.unwrap();
                     let b_string = b.0.get().shorthand().unwrap().to_string();
+                    */
+                    let b_string = branch_data.shorthand();
                     let head = head.shorthand().unwrap().to_string();
-                    if head.contains(&b_string) || b_string.contains(&head) {
-                        stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
+                    if head.contains(b_string) || b_string.contains(&head) {
+                        stop_conditions.push(Some(branch_data));
                     }
                 }
             },
             Err(_) => {
                 for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                    let b = branch.unwrap();
-                    let b_string = b.0.get().shorthand().unwrap().to_string();
-                    stop_conditions.push(Some((b.0.get().target().unwrap(), format!("{}, ", b_string))));
+                    let branch_data = BranchData::new(branch);
+                    stop_conditions.push(Some(branch_data));
                 }
             }
         };
@@ -79,18 +85,21 @@ impl<'a> GitExplorer {
 
     // TODO: fix wrong name, this is branches_vec
     pub fn branches_strings(&self) -> Vec<Span> {
-        // TODO: Create new struct so this function returns Vec<NewBranchStruct>
         self
             .stop_conditions
             .clone()
             .into_iter()
             .enumerate()
             .map(|(i, sc)| {
-                let s = sc.unwrap_or_else(|| { (Oid::zero(), String::from(format!("{}/{} None, ", self.stop_condition_i, self.stop_conditions.len())) )}).1;
+                // let s = sc.unwrap_or_else(|| { (Oid::zero(), String::from(format!("{}/{} None, ", self.stop_condition_i, self.stop_conditions.len())) )}).1;
+                let s = match sc {
+                    Some(sc) => sc.shorthand().clone(),
+                    None => String::from(format!("{}/{} None", self.stop_condition_i + 1, self.stop_conditions.len())),
+                };
                 if i == self.stop_condition_i {
-                    Span::styled(s, Style::default().fg(Color::Yellow))
+                    Span::styled(format!("{} ", s), Style::default().fg(Color::Yellow))
                 } else {
-                    Span::styled(s, Style::default().fg(Color::White))
+                    Span::styled(format!("{} ", s), Style::default().fg(Color::White))
                 }
             }).collect::<Vec<Span>>()
     }
@@ -110,7 +119,7 @@ impl<'a> GitExplorer {
     pub fn get_selected_branch_oid(&self) -> Option<Oid> {
         let a = self.stop_conditions.get(self.stop_condition_i).unwrap().to_owned();
         match a {
-            Some((oid, _)) => Some(oid),
+            Some(branch_data) => Some(branch_data.oid()),
             None => None
         }
     }
@@ -291,7 +300,7 @@ impl<'a> GitExplorer {
         let stop_condition = self.stop_conditions.get(self.stop_condition_i).unwrap();
         let abort_next = match stop_condition {
             Some(stop_condition) => {
-                stop_condition.0 == commit_max.id()
+                stop_condition.oid() == commit_max.id()
             }
             _ => false
         };
