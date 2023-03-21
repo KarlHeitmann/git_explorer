@@ -32,6 +32,8 @@ pub struct GitExplorer {
     stop_condition_i: usize,
     stop_conditions: Vec<Option<BranchData>>,
     nodes_len: usize,
+    abort: bool,
+    limit_stack: Option<usize>,
 }
 
 impl<'a> GitExplorer {
@@ -69,6 +71,8 @@ impl<'a> GitExplorer {
         };
 
         Self {
+            abort: false,
+            limit_stack: Some(500),
             stop_condition_i: 0,
             repo,
             root_oid,
@@ -169,6 +173,28 @@ impl<'a> GitExplorer {
                 }
                 // let branches = branches.map(|b| BranchData::new(b)).collect();
                 self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), branches)
+
+                /*
+                // self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), self.repo.branches(Some(BranchType::Local)).unwrap())
+                let x = self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), self.repo.branches(Some(BranchType::Local)).unwrap());
+                x
+                */
+
+                /*
+                // let repo = &self.repo;
+                let branches = self.repo
+                    .branches(Some(BranchType::Local))
+                    .unwrap();
+                let head_data = self.repo.head().unwrap().peel_to_commit().unwrap().clone();
+                self.paint_commit_track(head_data, branches)
+                */
+                /*
+                let mut repo = &mut self.repo;
+                // let repo = &self.repo;
+                let mut branches = repo.branches(Some(BranchType::Local)).unwrap();
+                let mut head_data = repo.head().unwrap().peel_to_commit().unwrap().clone();
+                self.paint_commit_track(head_data, branches)
+                */
             }
         };
         self.nodes_len = nodes.len();
@@ -204,22 +230,22 @@ impl<'a> GitExplorer {
     }
 
     fn paint_branch(
-        &self,
+        &mut self,
         mut commits: Vec<Commit>,
         mut output: Vec<GraphNode>,
-        limit_stack: Option<usize>,
-        branches: Vec<BranchData>,
-        abort: bool) -> Vec<GraphNode> {
+        branches: Vec<BranchData>,) -> Vec<GraphNode> {
     // fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
         // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
         // println!("{:?}", debug_data);
         let l = commits.len();
         let mut status = Status::Same;
 
-        let (abort, limit_stack) = match limit_stack {
-            Some(limit_stack) => { (abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
-            None => {(abort || l == 0, None)}
+        let (abort, limit_stack) = match self.limit_stack {
+            Some(limit_stack) => { (self.abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
+            None => {(self.abort || l == 0, None)}
         };
+
+        self.limit_stack = limit_stack;
 
         if abort { return vec![] }
 
@@ -304,26 +330,26 @@ impl<'a> GitExplorer {
         }
 
         let stop_condition = self.stop_conditions.get(self.stop_condition_i).unwrap();
-        let abort_next = match stop_condition {
+        self.abort = match stop_condition {
             Some(stop_condition) => {
                 stop_condition.oid() == commit_max.id()
             }
             _ => false
         };
 
-        let vec_str = self.paint_branch(dedup.to_vec(), vec![], limit_stack, branches, abort_next);
+        let vec_str = self.paint_branch(dedup.to_vec(), vec![], branches);
 
         output.push(GraphNode { grapheme: paint_string, oid: commit_max.id(), branch_shorthand: shorthand, summary: commit_max.summary().unwrap().to_string() });
 
         [output, vec_str].concat()
     }
 
-    pub fn paint_commit_track(&self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
+    pub fn paint_commit_track(&mut self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
         // let limit_stack = 1000; // Works fine
         let limit_stack = 500; // Works fine
         // let limit_stack = 10000; // Works, but it is unhandeable :/
         // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
-        self.paint_branch(vec![commit], vec![], Some(limit_stack), branches, false)
+        self.paint_branch(vec![commit], vec![], branches)
     }
 
 }
