@@ -4,8 +4,10 @@ use git2::{Repository, Oid};
 use crossterm::event::KeyCode;
 // use crate::graph::GraphNode;
 // use crate::{utils::short_id, graph::GitExplorer};
-use crate::explorer::{GitExplorer, GraphNode};
+// use crate::explorer::{GitExplorer, GraphNode};
+use crate::explorer::GitExplorer;
 use crate::utils::short_id;
+use crate::explorer::graph_node::GraphNode;
 
 mod graph;
 mod app;
