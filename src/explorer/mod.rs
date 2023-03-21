@@ -31,6 +31,7 @@ pub struct GitExplorer {
     is_updated: bool,
     stop_condition_i: usize,
     stop_conditions: Vec<Option<BranchData>>,
+    collapsed_nodes: Vec<Oid>,
     nodes_len: usize,
 }
 
@@ -74,10 +75,15 @@ impl<'a> GitExplorer {
             root_oid,
             path,
             stop_conditions,
+            collapsed_nodes: vec![],
             nodes: vec![],
             is_updated: false,
             nodes_len: 0,
         }
+    }
+
+    pub fn collapse_node(&mut self, collapsed_node_oid: Oid) {
+        self.collapsed_nodes.push(collapsed_node_oid);
     }
 
     // TODO: fix wrong name, this is branches_vec
@@ -226,6 +232,16 @@ impl<'a> GitExplorer {
         let max_index = self.find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
 
         let commit_max = commits[max_index].clone();
+
+        // for collapsed_node_oid in self.collapsed_nodes.into_iter() {
+        // for collapsed_node_oid in self.collapsed_nodes.iter() {
+        for collapsed_node_oid in self.collapsed_nodes.clone() {
+            if collapsed_node_oid == commit_max.id() {
+                let parents: Vec<Commit> = commit_max.parents().collect();
+                if parents.len() > 1 {
+                }
+            }
+        }
 
         if short_id(commit_max.id()) == String::from("cdd9917") || short_id(commit_max.id()) == String::from("e5a7eb5") {
             let _aux = 1 + 1;

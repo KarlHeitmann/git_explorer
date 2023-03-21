@@ -51,6 +51,17 @@ impl Component for GraphComponent {
                     self.percentage_right -= 1;
                 }
             }
+            KeyCode::Char(' ') => {
+                match self.node_list_state.selected() {
+                    Some(i) => { 
+                        let oid = git_explorer.get_node_id(i).unwrap();
+                        git_explorer.collapse_node(oid);
+                        git_explorer.run();
+                    },
+                    None => {} // TODO: Create an alert component to show failures
+                };
+                
+            }
             KeyCode::Char('j') => {
                 // TODO: protect increment of diff_offset to not overflow diff lines in git_explorer.diff_commit() -> ParsedDiff
                 self.diff_offset += 1;
