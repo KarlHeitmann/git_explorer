@@ -139,7 +139,7 @@ impl App {
                     // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
                     0 => self.graph_component.render(f, &mut chunks, git_explorer, repo),
                     // 1 => render_branches(f, &mut chunks),
-                    1 => self.branches_component.render(f, chunks[1], git_explorer),
+                    1 => self.branches_component.render(f, chunks[1], git_explorer, repo),
                     _ => {},
                 }
                 // wrapper(f, percentage_left, percentage_right, node_list_state, &mut chunks, &git_explorer, repo);

@@ -169,27 +169,15 @@ impl GraphComponent {
         // let detail = git_explorer.diff_commit(current_commit, &data.get(i+1));
         let detail = git_explorer.diff_commit(current_commit, i+1);
 
-        // let asd = Paragraph::new(detail.test_lines);
-
-        // let node_detail = Paragraph::new("asd")
-        // let node_detail = Text::new(detail.test_lines.clone())
-        // let node_detail = Text::new(detail.test_lines.clone())
-        // let spans_to_build = &detail.test_lines[self.diff_offset..];
-
-        // let spans_to_build = detail.test_lines;
-        // let spans_to_build = &detail.test_lines[0..].to_owned();
         let spans_to_build = &detail.test_lines[self.diff_offset..].to_owned();
 
-        // let node_detail = Paragraph::new(spans_to_build.clone())
         let node_detail = Paragraph::new(spans_to_build.clone())
             .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
             .style(Style::default().fg(Color::White).bg(Color::Black))
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: true });
-        // let node_detail = detail.test_lines.clone();
 
         (list, node_detail)
-        // (list, detail.test_lines)
     }
 
     pub fn render<B: Backend>(

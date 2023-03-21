@@ -269,6 +269,7 @@ impl<'a> GitExplorer {
         }
     }
 
+    // TODO: fix wrong name, this is branches_vec
     pub fn branches_strings(&self) -> Vec<Span> {
         // TODO: Create new struct so this function returns Vec<NewBranchStruct>
         self
@@ -298,6 +299,14 @@ impl<'a> GitExplorer {
         }
     }
 
+    pub fn get_selected_branch_oid(&self) -> Option<Oid> {
+        let a = self.stop_conditions.get(self.stop_condition_i).unwrap().to_owned();
+        match a {
+            Some((oid, _)) => Some(oid),
+            None => None
+        }
+    }
+
     pub fn update_graph(&mut self, i: isize) {
         if i > 0 {
             if self.stop_condition_i < (self.stop_conditions.len() - 1) {
@@ -315,6 +324,7 @@ impl<'a> GitExplorer {
         self.run()
     }
 
+    // TODO: merge fn diff_commit and diff_commit_by_id using Generic types.
     // pub fn diff_commit(&self, commit_1: Commit, commit_2: &Option<&GraphNode>) -> String {
     pub fn diff_commit(&self, commit_1: Commit, i_2: usize) -> ParsedDiff {
         // let parsed_diff = 
@@ -322,6 +332,12 @@ impl<'a> GitExplorer {
         let parsed_diff = ParsedDiff::new(commit_1, commit_2, &self.repo);
         // detail
         parsed_diff
+    }
+
+    pub fn diff_commit_by_id(&self, commit_1: Commit, commit_2: Option<Oid>) -> ParsedDiff {
+        // let parsed_diff = 
+        // let commit_2 = self.get_node_id(i_2);
+        ParsedDiff::new(commit_1, commit_2, &self.repo)
     }
 
     pub fn run(&mut self) {
