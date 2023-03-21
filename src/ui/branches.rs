@@ -1,3 +1,5 @@
+#![allow(unused)]  // FIXME
+
 use git2::Repository;
 use tui::{
     layout::{Alignment, Constraint, Direction, Rect, Layout},
@@ -12,8 +14,8 @@ use tui::{
 
 use crate::ui::Component;
 // use crossterm::event::Event;
-use crate::graph::GitExplorer;
-use crossterm::event::{self, Event, KeyCode};
+use crate::explorer::GitExplorer;
+use crossterm::event::KeyCode;
 
 pub struct BranchesComponent {
     paragraph_title: String,

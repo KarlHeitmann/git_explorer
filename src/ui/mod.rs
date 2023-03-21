@@ -1,10 +1,13 @@
 use git2::{Repository, Oid};
 
 // use crossterm::event::Event;
-use crossterm::event::{self, Event, KeyCode};
-use crate::ui::app::App;
-use crate::graph::GraphNode;
-use crate::{utils::short_id, graph::GitExplorer};
+use crossterm::event::KeyCode;
+// use crate::graph::GraphNode;
+// use crate::{utils::short_id, graph::GitExplorer};
+// use crate::explorer::{GitExplorer, GraphNode};
+use crate::explorer::{GitExplorer, branch_data::BranchData};
+use crate::utils::short_id;
+use crate::explorer::graph_node::GraphNode;
 
 mod graph;
 mod app;
@@ -73,7 +76,7 @@ impl From<&GraphNode> for Text<'_> {
 // fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 
 // pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repository, root_commit: Commit, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
-pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repository, stop_condition: Option<(Oid, String)>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repository, stop_condition: Option<BranchData>) -> Result<(), Box<dyn std::error::Error>> {
     let mut node_list_state = ListState::default();
     let mut git_explorer = GitExplorer::new(None, None, stop_condition.clone()); // TARGET
     git_explorer.run();

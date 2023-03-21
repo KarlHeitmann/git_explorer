@@ -1,5 +1,5 @@
 use git2::Repository;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::KeyCode;
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -12,7 +12,7 @@ use tui::{
     backend::Backend,
 };
 
-use crate::graph::GitExplorer;
+use crate::explorer::GitExplorer;
 use crate::ui::Component;
 
 pub struct GraphComponent {

@@ -1,12 +1,13 @@
+#![allow(unused)]  // FIXME
+
 use crossterm::event::{self, Event, KeyCode};
 use git2::Repository;
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    terminal::Frame,
     Terminal,
-    text::{Span, Spans, Text},
+    text::{Span, Spans},
     backend::Backend,
     widgets::{
         Block, BorderType, Borders, ListState, Paragraph, Tabs
@@ -15,7 +16,7 @@ use tui::{
 
 use crate::ui::Component;
 use crate::ui::branches::BranchesComponent;
-use crate::graph::GitExplorer;
+use crate::explorer::GitExplorer;
 use crate::ui::graph::GraphComponent;
 
 #[derive(Copy, Clone, Debug)]
