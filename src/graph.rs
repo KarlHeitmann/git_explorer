@@ -3,7 +3,6 @@ use tui::{
     style::{Color, Style},
     text::Span
 };
-use core::iter::Map;
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
