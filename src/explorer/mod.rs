@@ -51,11 +51,8 @@ impl<'a> GitExplorer {
         match repo.head() {
             Ok(head) => {
                 for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-                    let branch_data = BranchData::new(branch);
-                    /*
-                    let b = branch.unwrap();
-                    let b_string = b.0.get().shorthand().unwrap().to_string();
-                    */
+                    // let branch_data = BranchData::new(branch);
+                    let branch_data = BranchData::from(branch);
                     let b_string = branch_data.shorthand();
                     let head = head.shorthand().unwrap().to_string();
                     if head.contains(b_string) || b_string.contains(&head) {
@@ -165,7 +162,12 @@ impl<'a> GitExplorer {
     pub fn run(&mut self) {
         let nodes = match self.root_oid {
             _ => {
-                let branches = self.repo.branches(Some(BranchType::Local)).unwrap();
+                let branches_tmp = self.repo.branches(Some(BranchType::Local)).unwrap();
+                let mut branches: Vec<BranchData> = vec![];
+                for b in branches_tmp {
+                    branches.push(BranchData::from(b));
+                }
+                // let branches = branches.map(|b| BranchData::new(b)).collect();
                 self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), branches)
             }
         };
@@ -206,7 +208,7 @@ impl<'a> GitExplorer {
         mut commits: Vec<Commit>,
         mut output: Vec<GraphNode>,
         limit_stack: Option<usize>,
-        branches: Vec<(Branch, BranchType, String)>,
+        branches: Vec<BranchData>,
         abort: bool) -> Vec<GraphNode> {
     // fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
         // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
@@ -229,19 +231,18 @@ impl<'a> GitExplorer {
             let _aux = 1 + 1;
         }
 
-        // PAINT
-        //
+        // Figures out if the current commit has a branch name
         let mut i_branch = 0;
         let mut shorthand: Option<String> = None;
         for branch in branches.iter() {
-            let b = branch.0.get();
-            let commit_branch = b.peel_to_commit().ok().unwrap();
+            let commit_branch = self.repo.find_commit(branch.oid()).unwrap();
             if commit_branch.id() == commit_max.id() {
-                shorthand = Some(b.shorthand().unwrap().to_string());
+                shorthand = Some(branch.shorthand().to_string());
                 break; 
             }
             i_branch = i_branch + 1;
         }
+        //
 
         let parents_max: Vec<Commit> = commit_max.parents().collect();
 
@@ -317,19 +318,10 @@ impl<'a> GitExplorer {
         [output, vec_str].concat()
     }
 
-    pub fn paint_commit_track(&self, commit: Commit, branches: Branches) -> Vec<GraphNode> {
+    pub fn paint_commit_track(&self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
         // let limit_stack = 1000; // Works fine
         let limit_stack = 500; // Works fine
         // let limit_stack = 10000; // Works, but it is unhandeable :/
-        let branches: Vec<(Branch, BranchType, String)> = branches
-            .map(|b| {
-                let b = b.ok();
-                let b = b.unwrap();
-                let b_aux = &b.0;
-                let name = b_aux.get().shorthand().unwrap().to_string();
-                (b.0, b.1, name)
-            }).collect();
-
         // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
         self.paint_branch(vec![commit], vec![], Some(limit_stack), branches, false)
     }
