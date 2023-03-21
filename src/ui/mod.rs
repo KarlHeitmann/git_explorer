@@ -4,7 +4,7 @@ use crate::ui::app::App;
 use crate::graph::GraphNode;
 use crate::{utils::short_id, graph::GitExplorer};
 
-mod home;
+mod graph;
 mod app;
 mod branches;
 

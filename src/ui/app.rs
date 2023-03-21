@@ -16,7 +16,7 @@ use tui::{
 use crate::ui::Component;
 use crate::ui::branches::BranchesComponent;
 use crate::graph::GitExplorer;
-use crate::ui::home::wrapper;
+use crate::ui::graph::GraphComponent;
 
 #[derive(Copy, Clone, Debug)]
 pub enum MenuItem {
@@ -95,17 +95,20 @@ fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuItem)
 pub struct App {
     // terminal: Terminal<B>,
     node_list_state: ListState,
-    branches: BranchesComponent,
+    branches_component: BranchesComponent,
+    graph_component: GraphComponent,
 }
 
 impl App {
     pub fn new() -> Self {
         let mut node_list_state = ListState::default();
         node_list_state.select(Some(0));
-        let branches = BranchesComponent::new();
+        let branches_component = BranchesComponent::new();
+        let graph_component = GraphComponent::new();
         Self { 
             node_list_state,
-            branches,
+            graph_component,
+            branches_component,
         }
     }
 
@@ -133,9 +136,11 @@ impl App {
                 f.render_widget(tabs, chunks[0]);
 
                 match tab_index {
-                    0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
+                    // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
+                    // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
+                    0 => self.graph_component.render(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
                     // 1 => render_branches(f, &mut chunks),
-                    1 => self.branches.render(f, chunks[1]),
+                    1 => self.branches_component.render(f, chunks[1]),
                     _ => {},
                 }
                 // wrapper(f, percentage_left, percentage_right, node_list_state, &mut chunks, &git_explorer, repo);
@@ -230,7 +235,8 @@ impl App {
 
     fn get_tabs(&mut self) -> Vec<&mut dyn Component> {
         vec![
-            &mut self.branches,
+            &mut self.branches_component,
+            &mut self.graph_component,
         ]
         /*
         vec![
