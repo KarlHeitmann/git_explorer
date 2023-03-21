@@ -1,5 +1,7 @@
 use git2::{Repository, Oid};
 
+// use crossterm::event::Event;
+use crossterm::event::{self, Event, KeyCode};
 use crate::ui::app::App;
 use crate::graph::GraphNode;
 use crate::{utils::short_id, graph::GitExplorer};
@@ -88,6 +90,7 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
 }
 
 pub trait Component {
+	fn event(&mut self, ev: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String>;
 }
 /*
 pub trait Component {

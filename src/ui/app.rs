@@ -120,7 +120,6 @@ impl App {
         git_explorer: &mut GitExplorer,
         repo: &Repository,) -> Result<(), Box<dyn std::error::Error>> {
 
-        let (mut percentage_left, mut percentage_right) = (50, 50);
         let mut tab_index = 0;
 
         let menu_titles = vec!["Home", "Quit"];
@@ -138,9 +137,9 @@ impl App {
                 match tab_index {
                     // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
                     // 0 => wrapper(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
-                    0 => self.graph_component.render(f, percentage_left, percentage_right, &mut self.node_list_state, &mut chunks, &git_explorer, repo),
+                    0 => self.graph_component.render(f, &mut chunks, git_explorer, repo),
                     // 1 => render_branches(f, &mut chunks),
-                    1 => self.branches_component.render(f, chunks[1]),
+                    1 => self.branches_component.render(f, chunks[1], git_explorer, repo),
                     _ => {},
                 }
                 // wrapper(f, percentage_left, percentage_right, node_list_state, &mut chunks, &git_explorer, repo);
@@ -151,82 +150,18 @@ impl App {
 
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    KeyCode::Tab => {
-                        // TODO: Reset selected to zero to prevent bug when attempting to look at a
-                        // commit that there is not anymore
-                        git_explorer.update_graph(1);
-                    }
-                    KeyCode::BackTab => {
-                        git_explorer.update_graph(-1);
-                    }
-                    KeyCode::Char('1') => {tab_index = 0}
-                    KeyCode::Char('2') => {tab_index = 1}
                     KeyCode::Char('q') => {
                         break;
                     }
-                    KeyCode::Left => {
-                        if percentage_left > 0 {
-                            percentage_left -= 1;
-                            percentage_right += 1;
+                    KeyCode::Char('1') => { tab_index = 0 }
+                    KeyCode::Char('2') => { tab_index = 1 }
+                    key_code => {
+                        match tab_index {
+                            0 => {self.graph_component.event(key_code, git_explorer);},
+                            1 => {self.branches_component.event(key_code, git_explorer);},
+                            _ => {}
                         }
                     }
-                    KeyCode::Right => {
-                        if percentage_right > 0 {
-                            percentage_left += 1;
-                            percentage_right -= 1;
-                        }
-                    }
-                    KeyCode::Down => {
-                        if let Some(selected) = self.node_list_state.selected() {
-                            let amount_nodes = git_explorer.get_nodes_len();
-                            if selected >= amount_nodes - 1 {
-                                self.node_list_state.select(Some(0));
-                            } else {
-                                self.node_list_state.select(Some(selected + 1));
-                            }
-                        }
-                    }
-                    KeyCode::Enter => {
-                        // TODO: restore this feature: when hitting enter on a commit, spawns a nes
-                        // instance recursively with root commit the commit under cursor
-                        // let selected = node_list_state.selected().unwrap();
-                        // let sub_tree_oid = data.get(selected).unwrap().id();
-                        // let sub_tree_oid = git_explorer.get_node_id(selected).unwrap();
-                        // let current_commit = repo.find_commit(sub_tree_oid).unwrap();
-                        // explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
-                        // explorer_wrapper(terminal, repo, None)?; // TODO: Add stop condition on recursion
-                    }
-                    KeyCode::PageDown => {
-                        if let Some(selected) = self.node_list_state.selected() {
-                            let amount_nodes = git_explorer.get_nodes_len();
-                            if selected >= amount_nodes - 10 {
-                                self.node_list_state.select(Some(0));
-                            } else {
-                                self.node_list_state.select(Some(selected + 10));
-                            }
-                        }
-                    }
-                    KeyCode::Up => {
-                        if let Some(selected) = self.node_list_state.selected() {
-                            let amount_nodes = git_explorer.get_nodes_len();
-                            if selected > 0 {
-                                self.node_list_state.select(Some(selected - 1));
-                            } else {
-                                self.node_list_state.select(Some(amount_nodes - 1));
-                            }
-                        }
-                    }
-                    KeyCode::PageUp => {
-                        if let Some(selected) = self.node_list_state.selected() {
-                            let amount_nodes = git_explorer.get_nodes_len();
-                            if selected > 10 {
-                                self.node_list_state.select(Some(selected - 10));
-                            } else {
-                                self.node_list_state.select(Some(amount_nodes - 1));
-                            }
-                        }
-                    }
-                    _ => {}
                 }
             }
         }
