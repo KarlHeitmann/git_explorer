@@ -168,7 +168,11 @@ impl<'a> GitExplorer {
                     branches.push(BranchData::from(b));
                 }
                 // let branches = branches.map(|b| BranchData::new(b)).collect();
-                self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), branches)
+                let commit;
+                {
+                    commit = self.repo.head().unwrap().peel_to_commit().unwrap();
+                }
+                self.paint_commit_track(commit, branches)
             }
         };
         self.nodes_len = nodes.len();
@@ -204,7 +208,7 @@ impl<'a> GitExplorer {
     }
 
     fn paint_branch(
-        &self,
+        &mut self,
         mut commits: Vec<Commit>,
         mut output: Vec<GraphNode>,
         limit_stack: Option<usize>,
@@ -318,7 +322,7 @@ impl<'a> GitExplorer {
         [output, vec_str].concat()
     }
 
-    pub fn paint_commit_track(&self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
+    pub fn paint_commit_track(&mut self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
         // let limit_stack = 1000; // Works fine
         let limit_stack = 500; // Works fine
         // let limit_stack = 10000; // Works, but it is unhandeable :/
