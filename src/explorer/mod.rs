@@ -32,9 +32,11 @@ pub struct GitExplorer {
     stop_condition_i: usize,
     stop_conditions: Vec<Option<BranchData>>,
     nodes_len: usize,
+    abort: bool,
+    limit_stack: Option<usize>,
 }
 
-impl<'a> GitExplorer {
+impl GitExplorer {
     pub fn new(path: Option<String>, root_oid: Option<Oid>, stop_condition: Option<BranchData>) -> Self {
 
         let repo = match path {
@@ -69,6 +71,8 @@ impl<'a> GitExplorer {
         };
 
         Self {
+            abort: false,
+            limit_stack: Some(500),
             stop_condition_i: 0,
             repo,
             root_oid,
@@ -160,19 +164,72 @@ impl<'a> GitExplorer {
     }
 
     pub fn run(&mut self) {
-        let nodes = match self.root_oid {
-            _ => {
-                let branches_tmp = self.repo.branches(Some(BranchType::Local)).unwrap();
-                let mut branches: Vec<BranchData> = vec![];
-                for b in branches_tmp {
-                    branches.push(BranchData::from(b));
-                }
-                // let branches = branches.map(|b| BranchData::new(b)).collect();
-                self.paint_commit_track(self.repo.head().unwrap().peel_to_commit().unwrap(), branches)
-            }
-        };
+        let branches_tmp = self.repo.branches(Some(BranchType::Local)).unwrap();
+        let mut branches: Vec<BranchData> = vec![];
+        for b in branches_tmp {
+            branches.push(BranchData::from(b));
+        }
+        /*
+        // match &mut *self.repo.head() {
+        // let head = self.repo.head().unwrap().clone() 
+        let head = self.repo.head().unwrap();
+        // match self.repo.head() {
+        let mut commit = head.peel_to_commit().unwrap();
+        // let commit = commit.clone();
+        // self.paint_commit_track(commit, branches)
+        // self.paint_commit_track(branches)
+        // self.paint_commit_track(commit)
+        let nodes = self.paint_commit_track();
+
         self.nodes_len = nodes.len();
-        self.nodes = nodes;
+        self.nodes = nodes.clone();
+        */
+        // match &mut *self.repo.head() {
+        /*
+        match self.repo.head().clone() {
+        // match self.repo.head() {
+            Ok(head) => {
+                let mut commit = head.peel_to_commit().unwrap();
+                // let commit = commit.clone();
+                // self.paint_commit_track(commit, branches)
+                // self.paint_commit_track(branches)
+                // self.paint_commit_track(commit)
+                let nodes = self.paint_commit_track();
+
+                self.nodes_len = nodes.len();
+                self.nodes = nodes.clone();
+            },
+            Err(e) => {}
+        }
+        */
+        let nodes;
+        let commit;
+        // nodes = self.paint_commit_track();
+        {
+            let head = match self.repo.head() {
+                Ok(reference) => reference,
+                Err(err) => {
+                    eprintln!("Error: {:?}", err);
+                    return;
+                }
+            };
+            commit = head.peel_to_commit().unwrap();
+            // let commit = commit.clone();
+        }
+        nodes = self.paint_commit_track();
+
+        // let head = self.repo.head().unwrap();
+        // match self.repo.head() {
+        // let mut commit = head.peel_to_commit().unwrap();
+        // let commit = commit.clone();
+        // self.paint_commit_track(commit, branches)
+        // self.paint_commit_track(branches)
+        // self.paint_commit_track(commit)
+        // let nodes = self.paint_commit_track();
+
+        self.nodes_len = nodes.len();
+        self.nodes = nodes.clone();
+
     }
 
     fn find_max_index(&self, times: Vec<Time>) -> usize {
@@ -204,22 +261,20 @@ impl<'a> GitExplorer {
     }
 
     fn paint_branch(
-        &self,
+        &mut self,
         mut commits: Vec<Commit>,
         mut output: Vec<GraphNode>,
-        limit_stack: Option<usize>,
-        branches: Vec<BranchData>,
-        abort: bool) -> Vec<GraphNode> {
-    // fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
-        // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
-        // println!("{:?}", debug_data);
+        branches: Vec<BranchData>,) -> Vec<GraphNode> {
+
         let l = commits.len();
         let mut status = Status::Same;
 
-        let (abort, limit_stack) = match limit_stack {
-            Some(limit_stack) => { (abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
-            None => {(abort || l == 0, None)}
+        let (abort, limit_stack) = match self.limit_stack {
+            Some(limit_stack) => { (self.abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
+            None => {(self.abort || l == 0, None)}
         };
+
+        self.limit_stack = limit_stack;
 
         if abort { return vec![] }
 
@@ -304,26 +359,26 @@ impl<'a> GitExplorer {
         }
 
         let stop_condition = self.stop_conditions.get(self.stop_condition_i).unwrap();
-        let abort_next = match stop_condition {
+        self.abort = match stop_condition {
             Some(stop_condition) => {
                 stop_condition.oid() == commit_max.id()
             }
             _ => false
         };
 
-        let vec_str = self.paint_branch(dedup.to_vec(), vec![], limit_stack, branches, abort_next);
+        let vec_str = self.paint_branch(dedup.to_vec(), vec![], branches);
 
         output.push(GraphNode { grapheme: paint_string, oid: commit_max.id(), branch_shorthand: shorthand, summary: commit_max.summary().unwrap().to_string() });
 
         [output, vec_str].concat()
     }
 
-    pub fn paint_commit_track(&self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
-        // let limit_stack = 1000; // Works fine
-        let limit_stack = 500; // Works fine
-        // let limit_stack = 10000; // Works, but it is unhandeable :/
-        // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
-        self.paint_branch(vec![commit], vec![], Some(limit_stack), branches, false)
+    // pub fn paint_commit_track(&mut self, commit: Commit, branches: Vec<BranchData>) -> Vec<GraphNode> {
+    // pub fn paint_commit_track(&mut self, branches: Vec<BranchData>) -> Vec<GraphNode> {
+    // pub fn paint_commit_track(&mut self, commit: Commit) -> Vec<GraphNode> {
+    pub fn paint_commit_track(&mut self) -> Vec<GraphNode> {
+        todo!()
+        // self.paint_branch(vec![commit], vec![], branches)
     }
 
 }
