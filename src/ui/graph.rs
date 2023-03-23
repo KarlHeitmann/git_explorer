@@ -141,7 +141,7 @@ impl GraphComponent {
             .title(format!("Graph"))
             .border_type(BorderType::Plain);
 
-        let items: Vec<ListItem> = git_explorer.nodes
+        let items: Vec<ListItem> = git_explorer.nodes()
             .iter()
             .map(|node| {
                 // let text = Text::from(node.clone());
