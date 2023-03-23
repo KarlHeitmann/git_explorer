@@ -162,22 +162,38 @@ impl GraphComponent {
         let i = self.node_list_state.selected().expect("there is always a selected node");
 
         // let sub_tree_oid = data.get(i).unwrap().id();
-        let sub_tree_oid = git_explorer.get_node_id(i).unwrap();
+        // let sub_tree_oid = git_explorer.get_node_id(i).unwrap();
+        // let sub_tree_oid = git_explorer.get_node_id(i);
 
-        let current_commit = repo.find_commit(sub_tree_oid).unwrap();
+        // let a = repo.find_commit(sub_tree_oid)
+        // let current_commit = repo.find_commit(sub_tree_oid).unwrap();
+        // let current_commit = repo.find_commit(sub_tree_oid);
+        // match repo.find_commit(sub_tree_oid) {
+        match git_explorer.get_node_id(i) {
+            Some(sub_tree_oid) => {
+                let current_commit = repo.find_commit(sub_tree_oid).unwrap();
+                // let detail = git_explorer.diff_commit(current_commit, &data.get(i+1));
+                let detail = git_explorer.diff_commit(current_commit, i+1);
 
-        // let detail = git_explorer.diff_commit(current_commit, &data.get(i+1));
-        let detail = git_explorer.diff_commit(current_commit, i+1);
+                let spans_to_build = &detail.test_lines[self.diff_offset..].to_owned();
 
-        let spans_to_build = &detail.test_lines[self.diff_offset..].to_owned();
+                let node_detail = Paragraph::new(spans_to_build.clone())
+                    .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
+                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                    .alignment(Alignment::Left)
+                    .wrap(Wrap { trim: true });
 
-        let node_detail = Paragraph::new(spans_to_build.clone())
-            .block(Block::default().title(format!("Commit COMPLETE {} ", sub_tree_oid)).borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
-
-        (list, node_detail)
+                (list, node_detail)
+            },
+            None => {
+                let node_detail = Paragraph::new("bla bla bla")
+                    .block(Block::default().title(format!("Commit COMPLETE ")).borders(Borders::ALL))
+                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                    .alignment(Alignment::Left)
+                    .wrap(Wrap { trim: true });
+                (list, node_detail)
+            }
+        }
     }
 
     pub fn render<B: Backend>(

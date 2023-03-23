@@ -3,6 +3,7 @@ use crate::explorer::graph_node::GraphNode;
 use crate::explorer::branch_data::BranchData;
 use crate::explorer::short_id;
 use crate::explorer::ParsedDiff;
+use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 
 use tui::{
     style::{Color, Style},
@@ -113,6 +114,7 @@ impl Kernel {
     }
 
     pub fn run(&mut self, repo: &Repository) {
+        trace!("fn run");
         let nodes = match self.root_oid {
             _ => {
                 let branches_tmp = repo.branches(Some(BranchType::Local)).unwrap(); // TODO use BranchData
@@ -156,6 +158,17 @@ impl Kernel {
         format!("{}", branches_string)
     }
 
+    fn abort(&mut self, commits_len: usize) -> bool {
+        match self.limit_stack {
+            Some(limit_stack) => {
+                let result = self.abort || commits_len == 0 || limit_stack == 0;
+                self.limit_stack = Some(limit_stack - 1);
+                result
+            },
+            None => self.abort || commits_len == 0
+        }
+    }
+
     fn paint_branch(
         &mut self,
         mut commits: Vec<Commit>,
@@ -167,20 +180,7 @@ impl Kernel {
         // println!("{:?}", debug_data);
         let l = commits.len();
 
-        let (abort, limit_stack) = match self.limit_stack {
-            Some(limit_stack) => { (self.abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
-            None => {(self.abort || l == 0, None)}
-        };
-
-        self.limit_stack = limit_stack;
-
-
-        let (abort, limit_stack) = match limit_stack {
-            Some(limit_stack) => { (abort || l == 0 || limit_stack == 0, Some(limit_stack - 1))},
-            None => {(abort || l == 0, None)}
-        };
-
-        if abort { return vec![] }
+        if self.abort(l) { return vec![] }
 
         let max_index = self.find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
 
@@ -269,7 +269,9 @@ impl Kernel {
     pub fn paint_commit_track(&mut self, commit: Commit, branches: Vec<BranchData>, repo: &Repository) -> Vec<GraphNode> {
     // pub fn paint_commit_track(&self, commit: Commit, branches: Vec<BranchData>, repo: &Repository) -> Vec<GraphNode> {
         // let limit_stack = 1000; // Works fine
-        let limit_stack = 500; // Works fine
+
+        self.abort = false;
+        self.limit_stack = Some(500); // Works fine
         // let limit_stack = 10000; // Works, but it is unhandeable :/
         // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
         self.paint_branch(vec![commit], vec![], branches, repo)
