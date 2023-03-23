@@ -66,6 +66,7 @@ impl<'a> GitExplorer {
         self.kernel.diff_commit(commit_1, i_2, &self.git_wrapper.repo)
     }
     pub fn get_node_id(&self, i: usize) -> Option<Oid> {
+        // self.kernel.get_node_id(i).clone()
         self.kernel.get_node_id(i)
     }
     pub fn nodes(&self) -> Vec<GraphNode> {
