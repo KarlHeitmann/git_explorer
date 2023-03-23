@@ -1,10 +1,13 @@
 #![allow(unused)]  // FIXME
 
+use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
 use tui::{
     style::{Color, Style},
     text::Span,
 };
+
+use std::process;
 
 use crate::utils::short_id;
 use crate::explorer::graph_node::GraphNode;
@@ -41,7 +44,7 @@ impl<'a> GitExplorer {
             _ => {
                 match Repository::open(".") {
                     Ok(repo) => repo,
-                    Err(e) => panic!("failed to open: {}", e),
+                    Err(e) => { error!("failed to open: {}", e); process::exit(0x0100); } ,
                 }
             }
         };
