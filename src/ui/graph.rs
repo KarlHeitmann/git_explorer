@@ -18,18 +18,37 @@ use crate::ui::Component;
 
 use super::centered_rect_absolute;
 
-pub struct GraphComponent {
+pub struct ActionKey<'a> {
+    key_code: KeyCode,
+    pub git_explorer_action: &'a dyn Fn(&mut GitExplorer)
+}
+
+impl<'a> ActionKey<'a> {
+    pub fn new(key_code: KeyCode) -> Self {
+        Self {
+            key_code,
+            git_explorer_action: &|git_explorer: &mut GitExplorer| {git_explorer.update_graph(1)}
+        }
+    }
+}
+
+pub struct GraphComponent<'a> {
     node_list_state: ListState,
     percentage_left: u16,
     percentage_right: u16,
     diff_offset: usize,
     help_toggled: bool,
+    action_key: ActionKey<'a>,
 }
 
-impl Component for GraphComponent {
+impl Component for GraphComponent<'_> {
 	// fn event(&mut self, ev: &Event, git_explorer: &GitExplorer) -> Result<String, String> {
 	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
         match key_code {
+            KeyCode::Char('k') => {
+                // (self.action_key.git_explorer_action)(String::from("ups I did it again"));
+                (self.action_key.git_explorer_action)(git_explorer);
+            }
             KeyCode::Tab => {
                 // TODO: Reset selected to zero to prevent bug when attempting to look at a
                 // commit that there is not anymore
@@ -136,16 +155,18 @@ impl Component for GraphComponent {
     }
 }
 
-impl GraphComponent {
+impl GraphComponent<'_> {
     pub fn new() -> Self {
         let mut node_list_state = ListState::default();
         node_list_state.select(Some(0));
         let (percentage_left, percentage_right) = (50, 50);
+        let action_key = ActionKey::new(KeyCode::Char('k'));
         Self {
             node_list_state,
             percentage_left, percentage_right,
             diff_offset: 0,
             help_toggled: false,
+            action_key,
         }
     }
 
