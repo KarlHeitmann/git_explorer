@@ -1,13 +1,14 @@
 use git2::Repository;
 use crossterm::event::KeyCode;
+use log::{trace, debug};
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Spans, Text},
+    text::{Spans, Text, Span},
     terminal::Frame,
     widgets::{
-        Block, BorderType, Borders, List, ListItem, ListState, Paragraph, Wrap
+        Block, BorderType, Borders, List, ListItem, ListState, Paragraph, Wrap, Clear,
     },
     backend::Backend,
 };
@@ -15,11 +16,14 @@ use tui::{
 use crate::explorer::GitExplorer;
 use crate::ui::Component;
 
+use super::centered_rect_absolute;
+
 pub struct GraphComponent {
     node_list_state: ListState,
     percentage_left: u16,
     percentage_right: u16,
     diff_offset: usize,
+    help_toggled: bool,
 }
 
 impl Component for GraphComponent {
@@ -60,12 +64,24 @@ impl Component for GraphComponent {
                     self.diff_offset -= 1;
                 }
             }
+            KeyCode::Char('?') => {
+                self.help_toggled = !self.help_toggled;
+                trace!("HELP! {}", self.help_toggled);
+
+            }
             KeyCode::Down => {
                 if let Some(selected) = self.node_list_state.selected() {
                     let amount_nodes = git_explorer.get_nodes_len();
+                    let node = git_explorer.get_node_id(selected);
                     if selected >= amount_nodes - 1 {
+                        trace!("DOWN");
+                        // debug!("{:?} - parents: ", node, node.unwrap().parents());
+                        trace!("DOWN");
                         self.node_list_state.select(Some(0));
                     } else {
+                        trace!("DOWN");
+                        debug!("{:?}", node);
+                        trace!("DOWN");
                         self.node_list_state.select(Some(selected + 1));
                     }
                     self.diff_offset = 0;
@@ -129,6 +145,7 @@ impl GraphComponent {
             node_list_state,
             percentage_left, percentage_right,
             diff_offset: 0,
+            help_toggled: false,
         }
     }
 
@@ -203,27 +220,84 @@ impl GraphComponent {
         git_explorer: &GitExplorer,
         repo: &Repository,
         ) {
-        let vertical_chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(
-                [Constraint::Length(3), Constraint::Min(5)].as_ref()
-            )
-            .split(chunks[1]);
 
-        let text = Spans::from(git_explorer.branches_strings());
+        if self.help_toggled {
+            const SIZE: (u16, u16) = (65, 24);
+            // let scroll_threshold = SIZE.1 / 3;
+            // let scroll =
+            //     self.selection.saturating_sub(scroll_threshold);
 
-        let paragraph = Paragraph::new(text);
-        f.render_widget(paragraph, vertical_chunks[0]);
 
-        let nodes_chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(
-                [Constraint::Percentage(self.percentage_left), Constraint::Percentage(self.percentage_right)].as_ref(),
-            )
-            .split(vertical_chunks[1]);
-        let (left, right) = self.render_home(repo, git_explorer);
-        f.render_stateful_widget(left, nodes_chunks[0], &mut self.node_list_state);
-        f.render_widget(right, nodes_chunks[1]);
+            let width = SIZE.0;
+            let height = SIZE.1;
+            let rect = centered_rect_absolute(width, height, f.size());
+            f.render_widget(Clear, rect);
+            f.render_widget(
+                Block::default()
+                    // .title(strings::help_title(&self.key_config))
+                    .title("HELP")
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Thick),
+                rect,
+            );
+			let chunks = Layout::default()
+				.vertical_margin(1)
+				.horizontal_margin(1)
+				.direction(Direction::Vertical)
+				.constraints(
+					[Constraint::Min(1), Constraint::Length(1)]
+						.as_ref(),
+				)
+				.split(rect);
+
+			f.render_widget(
+				Paragraph::new("qweewq")
+				// Paragraph::new(self.get_text())
+					// .scroll((scroll, 0))
+					.alignment(Alignment::Left),
+				chunks[0],
+			);
+
+			f.render_widget(
+				Paragraph::new("asddsa")
+				// Paragraph::new(self.get_text())
+					// .scroll((scroll, 0))
+					.alignment(Alignment::Left)
+                    /*
+				Paragraph::new(Spans::from(vec![Span::styled(
+					Cow::from(format!("gitui {}", Version::new(),)),
+					Style::default(),
+				)]))
+                */
+				.alignment(Alignment::Right),
+				chunks[1],
+			);
+
+
+
+        } else {
+            let vertical_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [Constraint::Length(3), Constraint::Min(5)].as_ref()
+                )
+                .split(chunks[1]);
+
+            let text = Spans::from(git_explorer.branches_strings());
+
+            let paragraph = Paragraph::new(text);
+            f.render_widget(paragraph, vertical_chunks[0]);
+
+            let nodes_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(
+                    [Constraint::Percentage(self.percentage_left), Constraint::Percentage(self.percentage_right)].as_ref(),
+                )
+                .split(vertical_chunks[1]);
+            let (left, right) = self.render_home(repo, git_explorer);
+            f.render_stateful_widget(left, nodes_chunks[0], &mut self.node_list_state);
+            f.render_widget(right, nodes_chunks[1]);
+        }
     }
 }
 

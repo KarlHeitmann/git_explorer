@@ -201,6 +201,30 @@ impl Kernel {
         shorthand
     }
 
+    fn paint_split_commit<'a>(&self, parents_max: &Vec<Commit<'a>>, commits: &mut Vec<Commit<'a>>, max_index: usize, l: usize) -> (String, String) {
+        let mut paint_string_split = String::new();
+        let mut paint_string_join = String::new();
+        match parents_max.len() {
+            0 => {
+                paint_string_split.push_str(&format!("\n╽"));
+            },
+            1 => {
+                commits.insert(max_index, parents_max[0].clone());
+            },
+            2 => {
+                paint_string_split.push_str(&format!(
+                    "\n{}├{}─┐",
+                    String::from("│ ").repeat(max_index),
+                    String::from("──").repeat(l - (max_index + 1)),
+                ));
+                commits.insert(max_index, parents_max[0].clone());
+                commits.insert(max_index + 1, parents_max[1].clone());
+            },
+            _ => { panic!("AAHHH! There is a commit with more than 2 parents!!! I'm so scared... HINT: Use the case above and apply it to general") }
+        }
+        (paint_string_split, paint_string_join)
+    }
+
     fn paint_branch(
         &mut self,
         mut commits: Vec<Commit>,
@@ -221,29 +245,10 @@ impl Kernel {
         let parents_max: Vec<Commit> = commit_max.parents().collect();
 
         let mut paint_string = self.paint(l, max_index, parents_max.len() > 1);
-        let mut paint_string_split = String::new();
-        let mut paint_string_join = String::new();
 
         // SUBSTITUTE commit_max by all its parents inside the "commits" vector.
         commits.remove(max_index);
-        match parents_max.len() {
-            0 => {
-                paint_string_split.push_str(&format!("\n╽"));
-            },
-            1 => {
-                commits.insert(max_index, parents_max[0].clone());
-            },
-            2 => {
-                paint_string_split.push_str(&format!(
-                    "\n{}├{}─┐",
-                    String::from("│ ").repeat(max_index),
-                    String::from("──").repeat(l - (max_index + 1)),
-                ));
-                commits.insert(max_index, parents_max[0].clone());
-                commits.insert(max_index + 1, parents_max[1].clone());
-            },
-            _ => { panic!("AAHHH! There is a commit with more than 2 parents!!! I'm so scared... HINT: Use the case above and apply it to general") }
-        }
+        let (paint_string_split, mut paint_string_join) = self.paint_split_commit(&parents_max, &mut commits, max_index, l);
 
         let mut binding = commits.clone();
         let (dedup, duplicates) = binding.partition_dedup_by(|a, b| a.id() == b.id());

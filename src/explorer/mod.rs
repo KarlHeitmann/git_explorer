@@ -43,7 +43,7 @@ impl<'a> GitExplorer {
         }
     }
 
-
+    // MAYBE USE MACROS HERE?
     pub fn run(&mut self) {
         self.kernel.run(&self.git_wrapper.repo)
     }
