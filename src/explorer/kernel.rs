@@ -187,28 +187,7 @@ impl Kernel {
         };
     }
 
-    fn paint_branch(
-        &mut self,
-        mut commits: Vec<Commit>,
-        mut output: Vec<GraphNode>,
-        branches: Vec<BranchData>,
-        repo: &Repository) -> Vec<GraphNode> {
-    // fn paint_branch(mut commits: Vec<Commit>, mut output: Vec<(String, Oid)>, limit_stack: Option<usize>) -> Vec<(String, Oid)> {
-        // let debug_data: Vec<String> = commits.clone().into_iter().map(|c| short_id(c.id())).collect();
-        // println!("{:?}", debug_data);
-        let l = commits.len();
-
-        if self.abort(l) { return vec![] }
-
-        let max_index = self.find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
-
-        let commit_max = commits[max_index].clone();
-
-        if short_id(commit_max.id()) == String::from("cdd9917") || short_id(commit_max.id()) == String::from("e5a7eb5") {
-            let _aux = 1 + 1;
-        }
-
-        // Figures out if the current commit has a branch name
+    fn short_hand_current_commit(&self, branches: &Vec<BranchData>, repo: &Repository, commit_max: &Commit) -> Option<String> {
         let mut i_branch = 0;
         let mut shorthand: Option<String> = None;
         for branch in branches.iter() {
@@ -219,7 +198,25 @@ impl Kernel {
             }
             i_branch = i_branch + 1;
         }
-        //
+        shorthand
+    }
+
+    fn paint_branch(
+        &mut self,
+        mut commits: Vec<Commit>,
+        mut output: Vec<GraphNode>,
+        branches: Vec<BranchData>,
+        repo: &Repository) -> Vec<GraphNode> {
+        let l = commits.len();
+
+        if self.abort(l) { return vec![] }
+
+        let max_index = self.find_max_index(commits.clone().into_iter().map(|c| c.time()).collect());
+
+        let commit_max = commits[max_index].clone();
+
+        // Figures out if the current commit has a branch name
+        let shorthand = self.short_hand_current_commit(&branches, repo, &commit_max);
 
         let parents_max: Vec<Commit> = commit_max.parents().collect();
 
@@ -261,8 +258,6 @@ impl Kernel {
         }
 
         if !paint_string_split.is_empty() && !paint_string_join.is_empty() {
-            // Occured a join and split: deal with it
-            // paint_string.push_str("\n│─┤")
             paint_string.push_str(&format!("\n{}├─{}┤", String::new().repeat(0), String::new().repeat(0))) // TODO: // XXX: This will fail at any time, recreate a git history branch that will stress this condition
         } else {
             paint_string.push_str(&paint_string_split);
