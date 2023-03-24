@@ -10,6 +10,9 @@ use tui::{
     text::Span,
 };
 
+const LIMIT_STACK: usize = 500;
+
+
 pub struct Kernel {
     root_oid: Option<Oid>,
     pub nodes: Vec<GraphNode>,
@@ -25,7 +28,7 @@ impl Kernel {
     pub fn new(root_oid: Option<Oid>, stop_conditions: Vec<Option<BranchData>>) -> Self {
         Self {
             abort: false,
-            limit_stack: Some(500),
+            limit_stack: Some(LIMIT_STACK),
             stop_condition_i: 0,
             root_oid,
             stop_conditions,
@@ -169,6 +172,21 @@ impl Kernel {
         }
     }
 
+    // fn maybe_set_abort(&mut self, current_drawn_commit: Commit, target_branch_data: &Option<BranchData>) {
+    fn maybe_set_abort(&mut self, current_drawn_commit: &Commit) {
+        if self.abort {return}
+        let stop_condition = self.stop_conditions.get(self.stop_condition_i);
+        self.abort = match stop_condition {
+            Some(stop_condition) => {
+                match stop_condition.to_owned() {
+                    Some(branch_data) => branch_data.oid() == current_drawn_commit.id(),
+                    None => false
+                }
+            }
+            _ => false
+        };
+    }
+
     fn paint_branch(
         &mut self,
         mut commits: Vec<Commit>,
@@ -251,13 +269,7 @@ impl Kernel {
             paint_string.push_str(&paint_string_join);
         }
 
-        let stop_condition = self.stop_conditions.get(self.stop_condition_i).unwrap();
-        self.abort = match stop_condition {
-            Some(stop_condition) => {
-                stop_condition.oid() == commit_max.id()
-            }
-            _ => false
-        };
+        self.maybe_set_abort(&commit_max);
 
         let vec_str = self.paint_branch(dedup.to_vec(), vec![], branches, repo);
 
@@ -271,11 +283,8 @@ impl Kernel {
         // let limit_stack = 1000; // Works fine
 
         self.abort = false;
-        self.limit_stack = Some(500); // Works fine
-        // let limit_stack = 10000; // Works, but it is unhandeable :/
-        // paint_branch(vec![commit], vec![], Some(limit_stack), branches)
+        self.limit_stack = Some(LIMIT_STACK); // Works fine
         self.paint_branch(vec![commit], vec![], branches, repo)
-        // self.paint_branch(vec![commit], vec![], Some(limit_stack), branches, false, repo)
     }
 }
 
