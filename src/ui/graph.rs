@@ -181,13 +181,7 @@ impl GraphComponent<'_> {
 
         let items: Vec<ListItem> = git_explorer.nodes()
             .iter()
-            .map(|node| {
-                // let text = Text::from(node.clone());
-                let text = Text::from(node);
-                // let text = Spans::from(node);
-                let l = ListItem::new(text);
-                l
-            })
+            .map(|node| node.into())
             .collect();
 
         let list = List::new(items).block(nodes_block).highlight_style(
