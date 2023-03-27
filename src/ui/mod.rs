@@ -2,6 +2,7 @@ use git2::{Repository, Oid};
 
 // use crossterm::event::Event;
 use crossterm::event::KeyCode;
+use log::info;
 // use crate::graph::GraphNode;
 // use crate::{utils::short_id, graph::GitExplorer};
 // use crate::explorer::{GitExplorer, GraphNode};
@@ -14,11 +15,12 @@ mod app;
 mod branches;
 
 use tui::{
-    text::{Spans, Text},
+    text::{Spans, Text, Span},
     layout::Rect,
     backend::Backend,
     terminal::Frame,
-    widgets::ListState,
+    widgets::{ListState, ListItem},
+    style::{Color, Style},
     Terminal
 };
 
@@ -48,21 +50,53 @@ pub fn centered_rect_absolute(
 
 
 
-impl From<&GraphNode> for Spans<'_> {
+// impl From<&GraphNode> for Spans<'_> {
+impl From<&GraphNode> for ListItem<'_> {
     fn from(graph_node: &GraphNode) -> Self {
-        let (grapheme, oid, branch_shorthand, summary) = (&graph_node.grapheme, graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
+
+        let (grapheme, oid, branch_shorthand, summary) = (graph_node.grapheme.clone(), graph_node.oid, &graph_node.branch_shorthand, &graph_node.summary);
         let branch_shorthand = match branch_shorthand {
             Some(b) => format!("[{}] ", b.to_string()),
             None => String::new()
         };
-        Spans::from(
-            {
-                match grapheme.split_once("\n") {
-                    Some((g1, g_right)) => format!("{} ({}) {}{}\n{}", g1, short_id(oid), branch_shorthand, summary, g_right),
-                    None => format!("{} ({}) {}{}", grapheme, short_id(oid), branch_shorthand, summary),
-                }
+
+        let oid = format!("{} ", short_id(oid));
+        let graphemes = grapheme.split("\n").collect::<Vec<&str>>();
+
+        let spans = match graphemes.len() {
+            1 => {
+                vec![
+                    Spans::from(
+                        vec![
+                            Span::styled(graphemes[0].to_string(), Style::default().fg(Color::Rgb(50, 50, 255))),
+                            Span::raw(oid),
+                            Span::styled(branch_shorthand, Style::default().fg(Color::Rgb(255, 50, 50))),
+                            Span::raw(summary.clone(), ),
+                        ]
+                    )
+                ]
+            },
+            2 => {
+                vec![
+                    Spans::from(
+                        vec![
+                            Span::styled(graphemes[0].to_string(), Style::default().fg(Color::Rgb(50, 50, 255))),
+                            Span::raw(oid),
+                            Span::styled(branch_shorthand, Style::default().fg(Color::Rgb(255, 50, 50))),
+                            Span::raw(summary.clone(), ),
+                        ]
+                    ),
+                    Spans::from(
+                        vec![
+                            Span::styled(graphemes[1].to_string(), Style::default().fg(Color::Rgb(50, 50, 255))),
+                        ]
+                    )
+                ]
             }
-        )
+            _ => {vec![]}
+        };
+
+        ListItem::new(spans)
     }
 }
  
