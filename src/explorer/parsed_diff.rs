@@ -9,11 +9,7 @@ use crate::utils::short_id;
 pub struct ParsedDiff<'a> {
     commit_1_oid: Oid,
     commit_2_oid: Option<Oid>,
-    // pub test_lines: Vec<Text<'a>>,
     pub test_lines: Vec<Spans<'a>>,
-    // pub test_lines: Vec<Text<'a>>,
-    // pub test_lines: Text<'a>,
-    // pub test_lines: Vec<Paragraph<'a>>,
 }
 
 pub struct MyDiffLine<'a>(DiffLine<'a>);
@@ -41,9 +37,30 @@ impl<'a> From<MyDiffLine<'_>> for Spans<'a> {
             '-' => Style::default().fg(Color::Red),
             _ => Style::default().fg(Color::White),
         };
-        // Spans::from(vec![])
-        // Spans::from(vec![Span::styled(s.clone(), style)])
         Spans::from(vec![Span::styled(s, style)])
+    }
+}
+
+pub struct MyCommit<'a>(Commit<'a>);
+
+impl<'a> From<MyCommit<'_>> for Vec<Spans<'a>> {
+    fn from(commit: MyCommit) -> Vec<Spans<'a>> {
+        let parents = commit.0.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
+
+        let message = &commit.0
+            .message()
+            .unwrap_or("NO COMMIT MESSAGE");
+        let committer = format!("Committer: {}", commit.0.committer().to_string());
+        let author = format!("Author: {}", commit.0.author());
+        let short_id_current_commit = short_id(commit.0.id());
+        let parents = format!("PARENTS: {}", parents);
+        vec![
+            Spans::from(vec![Span::styled(message.to_string(), Style::default().fg(Color::White))]), // TODO: message will not generate spans with new lines // TODO: Can this be replicated for ListItems? To add new lines there with multiple spans?
+            Spans::from(vec![Span::styled(committer, Style::default().fg(Color::Red))]),
+            Spans::from(vec![Span::styled(author, Style::default().fg(Color::White))]),
+            Spans::from(vec![Span::styled(short_id_current_commit, Style::default().fg(Color::White))]),
+            Spans::from(vec![Span::styled(parents, Style::default().fg(Color::White))]),
+        ]
     }
 }
 
@@ -61,28 +78,10 @@ impl ParsedDiff<'_> {
         let commit_1_oid = commit_1.id();
         let commit_2_oid = commit_2;
         let current_commit = commit_1;
-        // let mut test_lines = vec![];
         let test_lines;
 
-        let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
-
-        // let message = current_commit.message().clone().unwrap_or("NO COMMIT MESSAGE");
-        let message = &current_commit
-            // .to_owned()
-            .message()
-            // .clone()
-            .unwrap_or("NO COMMIT MESSAGE");
-        let committer = format!("Committer: {}", current_commit.committer().to_string());
-        let author = format!("Author: {}", current_commit.author());
-        let short_id_current_commit = short_id(current_commit.id());
-        let parents = format!("PARENTS: {}", parents);
-        let mut diff_spans = vec![
-            Spans::from(vec![Span::styled(message.to_string(), Style::default().fg(Color::White))]), // TODO: message will not generate spans with new lines // TODO: Can this be replicated for ListItems? To add new lines there with multiple spans?
-            Spans::from(vec![Span::styled(committer, Style::default().fg(Color::Red))]),
-            Spans::from(vec![Span::styled(author, Style::default().fg(Color::White))]),
-            Spans::from(vec![Span::styled(short_id_current_commit, Style::default().fg(Color::White))]),
-            Spans::from(vec![Span::styled(parents, Style::default().fg(Color::White))]),
-        ];
+        let my_current_commit: MyCommit = MyCommit(current_commit.clone());
+        let mut diff_spans: Vec<Spans> = my_current_commit.into();
 
         match commit_2 {
             Some(oid) => {
