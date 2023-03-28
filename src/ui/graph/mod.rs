@@ -29,13 +29,19 @@ pub struct GraphComponent<'a> {
     diff_offset: usize,
     help_toggled: bool,
     action_key: ActionKey<'a>,
+    edit_mode: bool,
+
 }
 
 impl Component for GraphComponent<'_> {
 	// fn event(&mut self, ev: &Event, git_explorer: &GitExplorer) -> Result<String, String> {
-	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
+    fn command_mode_event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
         match key_code {
             KeyCode::Char('i') => {
+                // (self.action_key.git_explorer_action)(String::from("ups I did it again"));
+                self.edit_mode = true;
+            }
+            KeyCode::Char('u') => {
                 // (self.action_key.git_explorer_action)(String::from("ups I did it again"));
                 (self.action_key.git_explorer_action)(git_explorer);
             }
@@ -143,6 +149,18 @@ impl Component for GraphComponent<'_> {
         }
         Ok(String::from("ok"))
     }
+	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
+        if self.edit_mode {
+            match key_code {
+                KeyCode::Esc|KeyCode::F(2) => { self.edit_mode = false } // Gets traped in vim
+                _ => {}
+            }
+
+        } else {
+            self.command_mode_event(key_code, git_explorer)?;
+        }
+        Ok(String::from("ok"))
+    }
 }
 
 impl GraphComponent<'_> {
@@ -157,6 +175,7 @@ impl GraphComponent<'_> {
             diff_offset: 0,
             help_toggled: false,
             action_key,
+            edit_mode: false,
         }
     }
 

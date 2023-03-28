@@ -141,6 +141,7 @@ pub fn explorer_wrapper<B: Backend>(terminal: &mut Terminal<B>, repo: &Repositor
 }
 
 pub trait Component {
+	fn command_mode_event(&mut self, ev: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String>;
 	fn event(&mut self, ev: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String>;
 }
 /*

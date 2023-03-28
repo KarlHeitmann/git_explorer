@@ -101,6 +101,9 @@ impl BranchesComponent {
 }
 
 impl Component for BranchesComponent {
+    fn command_mode_event(&mut self, ev: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
+        Ok(String::from("ok"))
+    }
 	fn event(&mut self, key_code: KeyCode, git_explorer: &mut GitExplorer) -> Result<String, String> {
         match key_code {
             KeyCode::Tab => {
