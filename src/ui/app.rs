@@ -93,14 +93,14 @@ fn draw_menu_tabs<'a>(menu_titles: &'a Vec<&'a str>, active_menu_item: MenuItem)
         .divider(Span::raw("|"))
 }
 
-pub struct App {
+pub struct App<'a> {
     // terminal: Terminal<B>,
     node_list_state: ListState,
     branches_component: BranchesComponent,
-    graph_component: GraphComponent,
+    graph_component: GraphComponent<'a>,
 }
 
-impl App {
+impl App<'_> {
     pub fn new() -> Self {
         let mut node_list_state = ListState::default();
         node_list_state.select(Some(0));

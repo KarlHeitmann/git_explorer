@@ -2,8 +2,7 @@ use git2::Oid;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use crate::utils::short_id;
 
-#[derive(Clone)]
-
+#[derive(Clone, Debug)]
 pub struct GraphNode {
     pub grapheme: String,
     pub oid: Oid,
