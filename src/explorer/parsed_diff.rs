@@ -1,5 +1,5 @@
-use git2::{Repository, Commit, Oid, DiffHunk, DiffLine, };
-use log::{error};
+use git2::{Repository, Commit, Oid, DiffHunk, DiffLine, DiffDelta};
+use log::{error, info, trace};
 use tui::{
     style::{Color, Style},
     text::{Span, Spans},
@@ -38,6 +38,24 @@ impl<'a> From<MyDiffLine<'_>> for Spans<'a> {
             _ => Style::default().fg(Color::White),
         };
         Spans::from(vec![Span::styled(s, style)])
+    }
+}
+
+pub struct MyDiffDelta<'a>(DiffDelta<'a>);
+
+impl<'a> From<MyDiffDelta<'_>> for Spans<'a> {
+    fn from(diff_delta: MyDiffDelta) -> Spans<'a> {
+        todo!()
+    }
+}
+
+impl From<MyDiffDelta<'_>> for String {
+    fn from(diff_delta: MyDiffDelta) -> String {
+        let old_file = diff_delta.0.old_file();
+        let old_file = old_file.path().unwrap();
+        let new_file = diff_delta.0.new_file();
+        let new_file = new_file.path().unwrap();
+        format!("{:?} - {:?} --- {:?}", old_file, new_file, diff_delta.0.status())
     }
 }
 
@@ -95,19 +113,20 @@ impl ParsedDiff<'_> {
                 ).unwrap();
 
                 let _foreach_result = my_first_diff.foreach(
-                    &mut |delta, _| {
-                        let old_file = delta.old_file();
-                        let old_file = old_file.path().unwrap();
-                        let new_file = delta.new_file();
-                        let new_file = new_file.path().unwrap();
-                        let tmp = format!("{:?} - {:?}\n", old_file, new_file);
+                    &mut |diff_delta, _| {
+                        let delta = MyDiffDelta(diff_delta);
+                        let delta: String = delta.into();
+                        trace!("{}", delta);
                         true
                     },
                     None,
                     Some(&mut |_, _hunk| {
                         true
                     }),
-                    Some(&mut |_, hunk, line| {
+                    Some(&mut |unknown, hunk, line| {
+                        let diff_delta = MyDiffDelta(unknown);
+                        let diff_delta: String = diff_delta.into();
+                        info!("{}", diff_delta);
                         match hunk {
                             Some(diff_hunk) => {
                                 let hunk: MyDiffHunk = MyDiffHunk(diff_hunk);
