@@ -1,9 +1,9 @@
-use git2::{Repository, Commit, Oid};
+use git2::{Repository, Commit, Oid, DiffHunk, DiffLine, };
+use log::{error};
 use tui::{
     style::{Color, Style},
     text::{Span, Spans},
 };
-
 use crate::utils::short_id;
 
 pub struct ParsedDiff<'a> {
@@ -14,7 +14,46 @@ pub struct ParsedDiff<'a> {
     // pub test_lines: Vec<Text<'a>>,
     // pub test_lines: Text<'a>,
     // pub test_lines: Vec<Paragraph<'a>>,
-    pub detail: String,
+}
+
+pub struct MyDiffLine<'a>(DiffLine<'a>);
+
+impl From<MyDiffLine<'_>> for String {
+    fn from(line: MyDiffLine) -> String {
+        format!("{}:{}{}",
+            line.0.new_lineno().unwrap_or_else(|| line.0.old_lineno().unwrap()),
+            line.0.origin().to_string(),
+            String::from_utf8(line.0.content().to_vec()).unwrap()
+        )
+    }
+}
+
+impl<'a> From<MyDiffLine<'_>> for Spans<'a> {
+    fn from(line: MyDiffLine) -> Spans<'a> {
+        let s = format!("{}:{}{}",
+            line.0.new_lineno().unwrap_or_else(|| line.0.old_lineno().unwrap()),
+            line.0.origin().to_string(),
+            String::from_utf8(line.0.content().to_vec()).unwrap()
+        );
+        let style = match line.0.origin() {
+            ' ' => Style::default().fg(Color::White),
+            '+' => Style::default().fg(Color::Green),
+            '-' => Style::default().fg(Color::Red),
+            _ => Style::default().fg(Color::White),
+        };
+        // Spans::from(vec![])
+        // Spans::from(vec![Span::styled(s.clone(), style)])
+        Spans::from(vec![Span::styled(s, style)])
+    }
+}
+
+// type MyDiffHunk<'a> = DiffHunk<'a>;
+pub struct MyDiffHunk<'a>(DiffHunk<'a>);
+
+impl From<MyDiffHunk<'_>> for String {
+    fn from(hunk: MyDiffHunk) -> String {
+        String::from_utf8(hunk.0.header().to_vec()).unwrap()
+    }
 }
 
 impl ParsedDiff<'_> {
@@ -25,7 +64,6 @@ impl ParsedDiff<'_> {
         // let mut test_lines = vec![];
         let test_lines;
 
-        let mut detail = String::new();
         let parents = current_commit.parents().map(|c| short_id(c.id())).collect::<Vec<String>>().join(" - ");
 
         // let message = current_commit.message().clone().unwrap_or("NO COMMIT MESSAGE");
@@ -46,27 +84,6 @@ impl ParsedDiff<'_> {
             Spans::from(vec![Span::styled(parents, Style::default().fg(Color::White))]),
         ];
 
-        // test_lines.push(t);
-        //
-        //
-        // test_lines.push(Paragraph::from(Text::styled(diff_spans.clone(), Style::default().fg(Color::White))));
-        //
-        /*
-        let text_tmp = vec![
-            Spans::from(vec![
-                        Span::raw("First"),
-                        Span::styled(diff_spans.clone(), Style::default().fg(Color::Magenta)),
-            ])
-        ];
-        //
-        test_lines.push(Paragraph::new(text_tmp));
-        */
-        // detail.push_str(&diff_spans);
-
-        let mut string_0 = String::from("FD\n");
-        let mut string_a = String::new();
-        let mut string_b = String::new();
-
         match commit_2 {
             Some(oid) => {
                 let sub_tree_oid_previous = oid;
@@ -85,76 +102,24 @@ impl ParsedDiff<'_> {
                         let new_file = delta.new_file();
                         let new_file = new_file.path().unwrap();
                         let tmp = format!("{:?} - {:?}\n", old_file, new_file);
-                        string_0.push_str(&tmp);
                         true
                     },
                     None,
                     Some(&mut |_, _hunk| {
-                        /*
-                        let s = format!("{}\n",
-                            String::from_utf8(hunk.diff_spans().to_vec()).unwrap()
-                        );
-                        string_a.push_str(&s);
-                        */
-                        // string_a = String::from_utf8(hunk.diff_spans().to_vec()).unwrap();
                         true
                     }),
                     Some(&mut |_, hunk, line| {
                         match hunk {
-                            Some(hunk) => {
-                                let hunk = String::from_utf8(hunk.header().to_vec()).unwrap();
-                                if string_a == hunk {
-                                    let s = format!("{}:{}{}",
-                                        line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                                        line.origin().to_string(),
-                                        String::from_utf8(line.content().to_vec()).unwrap()
-                                    );
-                                    // test_lines.push(Text::styled(s.clone(), Style::default().fg(Color::Green)));
-                                    // test_lines.push(Spans::from(vec![Span::styled(s.clone(), Style::default().fg(Color::White))]));
-                                    let style = match line.origin() {
-                                        ' ' => Style::default().fg(Color::White),
-                                        '+' => Style::default().fg(Color::Green),
-                                        '-' => Style::default().fg(Color::Red),
-                                        _ => Style::default().fg(Color::White),
-                                    };
-                                    diff_spans.push(Spans::from(vec![Span::styled(s.clone(), style)])); // TODO: THERE IS MISSING DATA, string_a is not being added to diff_spans
-                                    string_b.push_str(&s);
-                                } else {
-                                    let s = format!("{}{}:{}{}",
-                                        hunk,
-                                        line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                                        line.origin().to_string(),
-                                        String::from_utf8(line.content().to_vec()).unwrap()
-                                    );
-                                    // test_lines.push(Text::styled(s.clone(), Style::default().fg(Color::Red)));
-                                    // test_lines.push(Spans::from(vec![Span::styled(s.clone(), Style::default().fg(Color::White))]));
-                                    let style = match line.origin() {
-                                        ' ' => Style::default().fg(Color::White),
-                                        '+' => Style::default().fg(Color::Green),
-                                        '-' => Style::default().fg(Color::Red),
-                                        _ => Style::default().fg(Color::White),
-                                    };
-                                    diff_spans.push(Spans::from(vec![Span::styled(s.clone(), style)]));
-                                    string_b.push_str(&s);
-                                }
-                                string_a = hunk;
+                            Some(diff_hunk) => {
+                                let hunk: MyDiffHunk = MyDiffHunk(diff_hunk);
+                                let hunk: String = hunk.into();
+                                let line = MyDiffLine(line);
+                                let style = Style::default().fg(Color::White);
+                                let spans: Spans = line.into();
+                                diff_spans.push(spans);
                             }
                             None => {
-                                let s = format!("{}:{}{}",
-                                    line.new_lineno().unwrap_or_else(|| line.old_lineno().unwrap()),
-                                    line.origin().to_string(),
-                                    String::from_utf8(line.content().to_vec()).unwrap()
-                                );
-                                // test_lines.push(Text::styled(s.clone(), Style::default().fg(Color::Yellow)));
-                                // test_lines.push(Spans::from(vec![Span::styled(s.clone(), Style::default().fg(Color::White))]));
-                                let style = match line.origin() {
-                                    ' ' => Style::default().fg(Color::White),
-                                    '+' => Style::default().fg(Color::Green),
-                                    '-' => Style::default().fg(Color::Red),
-                                    _ => Style::default().fg(Color::White),
-                                };
-                                diff_spans.push(Spans::from(vec![Span::styled(s.clone(), style)]));
-                                string_b.push_str(&s);
+                                error!("NO DIFF HUNK for {:?}", hunk);
                             }
                         }
                         true
@@ -165,14 +130,10 @@ impl ParsedDiff<'_> {
         }
         // let t = Text::from(diff_spans);
         test_lines = diff_spans;
-        detail.push_str(&string_0);
-        detail.push_str(&string_a);
-        detail.push_str(&string_b);
         Self {
             commit_1_oid,
             commit_2_oid,
             test_lines,
-            detail,
         }
     }
 }
