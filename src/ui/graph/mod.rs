@@ -1,11 +1,11 @@
-use git2::Repository;
+use git2::{Repository, BranchType};
 use crossterm::event::KeyCode;
 use log::{trace, debug};
 
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Spans, Text, Span},
+    text::Spans,
     terminal::Frame,
     widgets::{
         Block, BorderType, Borders, List, ListItem, ListState, Paragraph, Wrap, Clear,
@@ -30,7 +30,7 @@ pub struct GraphComponent<'a> {
     help_toggled: bool,
     action_key: ActionKey<'a>,
     edit_mode: bool,
-
+    filter_string: String,
 }
 
 impl Component for GraphComponent<'_> {
@@ -78,6 +78,13 @@ impl Component for GraphComponent<'_> {
                 if self.diff_offset > 0 {
                     self.diff_offset -= 1;
                 }
+            }
+            KeyCode::Char(' ') => {
+                let selected = self.node_list_state.selected();
+                git_explorer.stop_branch(selected)
+                // let sub_tree_oid = git_explorer.get_node_id(selected).unwrap();
+                // let current_commit = repo.find_commit(sub_tree_oid).unwrap();
+                // explorer_wrapper(terminal, repo, current_commit, None)?; // TODO: Add stop condition on recursion
             }
             KeyCode::Char('?') => {
                 self.help_toggled = !self.help_toggled;
@@ -153,6 +160,12 @@ impl Component for GraphComponent<'_> {
         if self.edit_mode {
             match key_code {
                 KeyCode::Esc|KeyCode::F(2) => { self.edit_mode = false } // Gets traped in vim
+                KeyCode::Char(c) => {
+                    self.filter_string.push(c);
+                },
+                KeyCode::Backspace => {
+                    self.filter_string.pop();
+                }
                 _ => {}
             }
 
@@ -176,6 +189,7 @@ impl GraphComponent<'_> {
             help_toggled: false,
             action_key,
             edit_mode: false,
+            filter_string: String::new(),
         }
     }
 
@@ -307,7 +321,17 @@ impl GraphComponent<'_> {
                 )
                 .split(chunks[1]);
 
-            let text = Spans::from(git_explorer.branches_strings());
+            // let text = Spans::from(git_explorer.branches_strings()); // FIXME // TODO This has the branches matching current pattern
+
+            let branches: Vec<Spans> = git_explorer.branches(None, Some(&self.filter_string))
+            // let branches: Vec<Spans> = git_explorer.branches(Some(BranchType::Local))
+            // let branches: Vec<Spans> = git_explorer.branches(Some(BranchType::Remote))
+                .iter()
+                .map(|b| Spans::from(format!("{}", b)))
+                .collect();
+            // let text = [vec![Spans::from("count: ")], branches].concat();
+            let text = [vec![Spans::from(format!("count: {}", branches.len()))], branches].concat();
+            // let branches = Spans::from(git_explorer.branches(None));
 
             let paragraph = Paragraph::new(text);
             f.render_widget(paragraph, vertical_chunks[0]);

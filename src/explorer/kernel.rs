@@ -3,7 +3,7 @@ use crate::explorer::graph_node::GraphNode;
 use crate::explorer::branch_data::BranchData;
 use crate::explorer::short_id;
 use crate::explorer::ParsedDiff;
-use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+use log::trace;
 
 use tui::{
     style::{Color, Style},
@@ -22,6 +22,7 @@ pub struct Kernel {
     nodes_len: usize,
     abort: bool,
     limit_stack: Option<usize>,
+    stop_at_node_i: Option<usize>,
 }
 
 impl Kernel {
@@ -35,7 +36,12 @@ impl Kernel {
             nodes: vec![],
             is_updated: false,
             nodes_len: 0,
+            stop_at_node_i: None,
+
         }
+    }
+    pub fn stop_branch(&mut self, stop_at_node_i: Option<usize>) {
+        self.stop_at_node_i = stop_at_node_i;
     }
     // TODO: fix wrong name, this is branches_vec
     pub fn branches_strings(&self) -> Vec<Span> {

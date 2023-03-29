@@ -1,5 +1,3 @@
-#![allow(unused)]  // FIXME
-
 use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
 use tui::{
@@ -43,6 +41,10 @@ impl<'a> GitExplorer {
         }
     }
 
+    pub fn stop_branch(&mut self, i: Option<usize>) {
+        self.kernel.stop_branch(i)
+    }
+
     // MAYBE USE MACROS HERE?
     pub fn run(&mut self) {
         self.kernel.run(&self.git_wrapper.repo)
@@ -61,6 +63,20 @@ impl<'a> GitExplorer {
     }
     pub fn branches_strings(&self) -> Vec<Span> {
         self.kernel.branches_strings()
+    }
+    pub fn branches(&self, branch_type: Option<BranchType>, string_filter: Option<&String>) -> Vec<BranchData> {
+        let mut branches = vec![];
+        for branch in self.git_wrapper.branches(branch_type).unwrap() {
+            let branch_data = BranchData::new(branch);
+            match string_filter.clone() {
+                Some(string_filter) => {
+                    if branch_data.shorthand().contains(string_filter) { branches.push(branch_data); }
+                },
+                None => branches.push(branch_data)
+            }
+            
+        }
+        branches
     }
     pub fn diff_commit(&self, commit_1: Commit, i_2: usize) -> ParsedDiff {
         self.kernel.diff_commit(commit_1, i_2, &self.git_wrapper.repo)

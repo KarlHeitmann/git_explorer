@@ -34,8 +34,8 @@ impl GitWrapper {
         self.repo.head()
     }
 
-    pub fn branches(&self) -> Result<Branches, Error> {
-        self.repo.branches(Some(BranchType::Local))
+    pub fn branches(&self, branch_type: Option<BranchType>) -> Result<Branches, Error> {
+        self.repo.branches(branch_type)
     }
 
     pub fn branches_data(&self, stop_condition: Option<BranchData>) -> Vec<Option<BranchData>> {
