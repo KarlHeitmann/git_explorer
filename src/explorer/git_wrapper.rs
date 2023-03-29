@@ -1,7 +1,7 @@
-use git2::{Reference, Error, Repository, Branches, Branch, BranchType, ReferenceType};
+use git2::{Reference, Error, Repository, Branches, BranchType};
 use crate::explorer::branch_data::BranchData;
 use std::process;
-use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+use log::error;
 
 pub struct GitWrapper {
     path: Option<String>,

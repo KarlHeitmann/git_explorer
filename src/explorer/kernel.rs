@@ -1,7 +1,6 @@
-use git2::{Repository, Commit, Oid, Time, Branches, Branch, BranchType};
+use git2::{Repository, Commit, Oid, Time, BranchType};
 use crate::explorer::graph_node::GraphNode;
 use crate::explorer::branch_data::BranchData;
-use crate::explorer::short_id;
 use crate::explorer::ParsedDiff;
 use log::trace;
 

@@ -5,7 +5,8 @@ use explorer::branch_data::BranchData;
 use git2::{ Repository, BranchType };
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
-use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+// use log::{trace, LevelFilter, SetLoggerError};
+use log::{trace, LevelFilter};
 use log4rs::{
     append::{
         console::{ConsoleAppender, Target},
@@ -13,7 +14,7 @@ use log4rs::{
     },
     config::{Appender, Config, Root},
     encode::pattern::PatternEncoder,
-    filter::threshold::ThresholdFilter,
+    // filter::threshold::ThresholdFilter,
 };
 
 
@@ -31,36 +32,12 @@ mod ui;
 mod utils;
 mod explorer;
 
-    /*
-fn test_info(repo: &Repository) {
-    let head = match repo.head() {
-        Ok(repo) => repo,
-        Err(e) => panic!("failed to get head: {}", e),
-    };
-
-    println!("{:?}", head.name());
-    println!("{:?}", head.shorthand());
-    println!("{:?}", head.is_branch());
-
-    for branch in repo.branches(Some(BranchType::Local)).unwrap() {
-        let b = branch.unwrap();
-        println!("{:?}", b.0.get().name());
-        println!("{:?}", b.0.get().shorthand());
-    }
-    let state = repo.state();
-    println!("{:?}", state);
-
-    let workdir = repo.workdir();
-    println!("{:?}", workdir);
-}
-    */
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let level = log::LevelFilter::Info;
+    let _level = log::LevelFilter::Info;
     let file_path = "./log";
 
     // Build a stderr logger.
-    let stderr = ConsoleAppender::builder().target(Target::Stderr).build();
+    let _stderr = ConsoleAppender::builder().target(Target::Stderr).build();
 
     // Logging to log file.
     let logfile = FileAppender::builder()
