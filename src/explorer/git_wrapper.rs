@@ -1,7 +1,7 @@
-use git2::{Reference, Error, Repository, Branches, Branch, BranchType, ReferenceType};
+use git2::{Reference, Error, Repository, Branches, BranchType};
 use crate::explorer::branch_data::BranchData;
 use std::process;
-use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+use log::error;
 
 pub struct GitWrapper {
     path: Option<String>,
@@ -34,8 +34,8 @@ impl GitWrapper {
         self.repo.head()
     }
 
-    pub fn branches(&self) -> Result<Branches, Error> {
-        self.repo.branches(Some(BranchType::Local))
+    pub fn branches(&self, branch_type: Option<BranchType>) -> Result<Branches, Error> {
+        self.repo.branches(branch_type)
     }
 
     pub fn branches_data(&self, stop_condition: Option<BranchData>) -> Vec<Option<BranchData>> {
